@@ -8,12 +8,87 @@ from tkinter import Tk, filedialog, simpledialog, messagebox, Button, Label, Fra
 import time
 import threading
 import queue
+import logging
+from datetime import datetime
+
+class FrameManager:
+    def __init__(self):
+        self.frame_count = 0
+        self.processed_frames = set()
+        self.recording_start_time = None
+        self.frame_copy_for_recording = None  # Atributo para armazenar a cópia do frame para gravação
+        self.frame_copy_for_detection = None  # Atributo para armazenar a cópia do frame para detecção
+        
+    def register_frame(self, frame_count, is_processed=False):
+        if is_processed:
+            self.processed_frames.add(frame_count)
+            
+    def start_recording(self):
+        self.recording_start_time = time.time()
+        self.frame_count = 0
+        self.processed_frames.clear()
+        
+    def get_timestamp(self):
+        if self.recording_start_time is None:
+            return 0
+        return time.time() - self.recording_start_time
+    
+    def get_frame_info(self, frame_count):
+        return {
+            'was_processed': frame_count in self.processed_frames,
+            'timestamp': self.get_timestamp()
+        }
+    
+    def store_frame_copy_for_recording(self, frame):
+        frame_copy = frame.copy()  # Faça a cópia fora do lock
+        with lock:
+            self.frame_copy_for_recording = frame_copy
+
+
+    def store_frame_copy_for_detection(self, frame):
+        frame_copy = frame.copy()  # Faça a cópia fora do lock
+        with lock:
+            self.frame_copy_for_detection = frame_copy
+
+    def get_frame_copy_for_recording(self):
+        """
+        Retorna a cópia do frame armazenada para gravação.
+        """
+        return self.frame_copy_for_recording
+
+    def get_frame_copy_for_detection(self):
+        """
+        Retorna a cópia do frame armazenada para detecção.
+        """
+        return self.frame_copy_for_detection
+    
+
+# Inicializar o frame_manager logo após a classe
+frame_manager = FrameManager()
+
+lock = threading.Lock()
+
+# Configuração do sistema de logging
+def setup_logging(project_folder):
+    log_filename = os.path.join(project_folder, f"processing_log_{datetime.now().strftime('%Y%m%d_%H%M%S')}.log")
+    logging.basicConfig(
+        filename=log_filename,
+        level=logging.INFO,
+        format='%(asctime)s - %(levelname)s - %(message)s'
+    )
+
+def log_frame_processing(frame_count, timestamp, detection_info, queue_sizes):
+    logging.info(f"Frame {frame_count}: Timestamp={timestamp:.3f}, "
+                f"Detected={bool(detection_info)}, "
+                f"Queue_sizes: video={queue_sizes['video']}, "
+                f"detection={queue_sizes['detection']}")
 
 # Variáveis globais
 video_queue = queue.Queue()
 detection_queue = queue.Queue()
 capturing = False  # Inicialmente não estamos capturando
 processing = True
+detection_complete_called = False
 
 # Configuração da câmera USB
 camera_index = 1  # Índice da câmera USB
@@ -181,47 +256,57 @@ processing_offset = 2     # Começar no frame y
 
 
 def frame_capture_thread():
-    global cap, stop_event, frame_count, processing_interval, processing_offset, capturing, processing
-    frame_count = 0
+    global cap, stop_event, frame_manager
     while not stop_event.is_set():
         ret, frame = cap.read()
         if not ret:
             print("Falha ao capturar imagem da câmera no thread de captura")
             break
-        frame_count += 1
+            
+        frame_manager.frame_count += 1
+        current_frame_count = frame_manager.frame_count
         
-        # Somente colocar frames na detection_queue se processing for True
         if processing:
             try:
                 detection_frame = frame.copy()
-                detection_queue.put((frame_count, detection_frame))
+                detection_queue.put((current_frame_count, detection_frame))
+                logging.debug(f"Frame {current_frame_count} adicionado à fila de detecção")
             except Exception as e:
-                print(f"Erro ao colocar frame na fila de detecção: {e}")
+                logging.error(f"Erro ao colocar frame na fila de detecção: {e}")
                 continue
 
-        # Colocar frames na video_queue se capturing for True
         if capturing:
             try:
                 video_frame = frame.copy()
-                video_queue.put((frame_count, video_frame))
+                video_queue.put((current_frame_count, video_frame))
+                logging.debug(f"Frame {current_frame_count} adicionado à fila de vídeo")
             except Exception as e:
-                print(f"Erro ao colocar frame na fila de vídeo: {e}")
+                logging.error(f"Erro ao colocar frame na fila de vídeo: {e}")
                 continue
 
 
 def video_recording_thread():
-    global out, stop_event, recording, frame_count
+    global out, stop_event, recording
     while not stop_event.is_set() and recording:
         try:
             frame_count, frame = video_queue.get(timeout=1)
             if frame is None:
-                print("Frame é None, não será gravado.")
+                logging.warning("Frame é None, não será gravado.")
                 continue
-            out.write(frame)
-            #print(f"Gravando frame {frame_count}")
+
+            frame_manager.store_frame_copy_for_recording(frame)
+            frame_copy = frame_manager.get_frame_copy_for_recording()
+            if frame_copy is not None:
+                out.write(frame_copy)
+            else:
+                logging.error("Frame não encontrado para gravação.")
+            logging.debug(f"Frame {frame_count} gravado no vídeo")
+            
         except queue.Empty:
             continue
-    # Liberar recursos ao terminar
+        except Exception as e:
+            logging.error(f"Erro na gravação do frame: {e}")
+            
     if out:
         out.release()
     if csv_file is not None:
@@ -230,26 +315,41 @@ def video_recording_thread():
 
 # Thread para processamento de objetos e exibição em tempo real
 def object_detection_thread():
-    global stop_event, recording_start_time, processing
+    global stop_event, frame_manager, detection_complete_called
     
     model = YOLO('C:\\Users\\santa\\OneDrive\\Desktop\\Codigos_Prontos\\best8.pt')
 
     while not stop_event.is_set():
         try:
             frame_count, frame = detection_queue.get(timeout=1)
-            current_time = time.time()
-            timestamp = current_time - (recording_start_time or current_time)
+            timestamp = frame_manager.get_timestamp()
 
-            # Decidir se deve realizar a detecção neste frame
+            queue_sizes = {
+                'video': video_queue.qsize(),
+                'detection': detection_queue.qsize()
+            }
+
             if (frame_count - processing_offset) % processing_interval == 0:
-                # Realizar a inferência
-                results = model(frame)
-                predictions = results[0].boxes.data.cpu().numpy()
-                findObject(predictions, frame, csv_writer if recording else None, frame_count, timestamp)
-                print(f"Processando frame {frame_count}")
-            #else:
-                #print(f"Exibindo frame {frame_count} sem detecção.")
-
+                frame_manager.store_frame_copy_for_detection(frame)
+                frame_copy = frame_manager.get_frame_copy_for_detection()
+                if frame_copy is not None:
+                    
+                    results = model(frame_copy)
+                    predictions = results[0].boxes.data.cpu().numpy()
+                
+                    # Registrar frame processado
+                    frame_manager.register_frame(frame_count, True)
+                
+                    # Logging antes do processamento
+                    log_frame_processing(frame_count, timestamp, predictions, queue_sizes)
+                
+                    # Processar detecções
+                    findObject(predictions, frame_copy, csv_writer if recording else None, 
+                             frame_count, timestamp)
+                else:
+                     logging.error("Frame não encontrado para detecção.")
+                
+                logging.info(f"Processado frame {frame_count} com {len(predictions)} detecções")
 
             # Desenhar quadrados e polígono
             for i, ((x1, y1), (x2, y2)) in enumerate(squares):
@@ -260,14 +360,17 @@ def object_detection_thread():
             if cv2.waitKey(1) & 0xFF == ord('q'):
                 stop_event.set()
                 break
+                
         except queue.Empty:
             if not processing and detection_queue.empty():
-                print("Detecção concluída.")
-                detection_complete()
+                logging.info("Detecção concluída.")
+                if not detection_complete_called:
+                    detection_complete_called = True
+                    detection_complete()
                 break
-            else:
-                continue
-    cv2.destroyAllWindows()
+            continue
+        except Exception as e:
+            logging.error(f"Erro no processamento do frame: {e}")
 
 
 def detection_complete():
@@ -281,8 +384,9 @@ def wait_for_detection_to_finish():
     detection_complete()
 
 def start_detection_thread():
-    global detection_thread, stop_event
+    global detection_thread, stop_event, detection_complete_called
     stop_event.clear()  # Limpa o stop_event para que a thread de detecção funcione
+    detection_complete_called = False
     detection_thread = threading.Thread(target=object_detection_thread)
     detection_thread.start()
 
@@ -441,8 +545,17 @@ def start_recording_button():
 
             print(f"Files '{processing_area_filename}' and '{areas_of_interest_filename}' have been created.")
 
+             # Iniciar gravação
+            frame_manager.start_recording()
+            setup_logging(new_folder_path)  # Iniciar logging para esta sessão
+            
+            recording = True
+            stop_event.clear()
+
             # Iniciar thread de gravação de vídeo
             threading.Thread(target=video_recording_thread).start()
+
+            logging.info(f"Iniciada nova sessão de gravação: Grupo={group_var.get()}, Cobaia={cobaia_number}")
 
         Button(group_selection_window, text="Confirmar", command=confirm_group).pack()
 
@@ -450,30 +563,43 @@ def start_recording_button():
 
 # Function to stop recording
 def stop_recording_button():
-    global recording, out, csv_file, csv_writer, capturing, processing, detection_thread, stop_event
+    global recording, out, csv_file, csv_writer, capturing, processing
     if recording:
         recording = False
-        capturing = False  # Parar de capturar frames para gravação
-        processing = False  # Parar de adicionar frames à detection_queue
-        processing_status.set("Processando frames restantes...")
+        capturing = False
+        processing = False
+        
+        video_path = out.get(cv2.CAP_PROP_POS_FRAMES)
+        csv_path = csv_file.name
+        
         if out is not None:
             out.release()
             out = None
         if csv_file is not None:
             csv_file.close()
             csv_file = None
-        csv_writer = None
-        root.after(0, lambda: messagebox.showinfo("Informação", "Arquivos de vídeo e CSV gravados."))
-        # Sinalizar para que a thread de detecção finalize
+        
+        # Verificar integridade após finalizar gravação
+        integrity_results = verify_frame_integrity(video_path, csv_path)
+        if integrity_results:
+            message = (f"Gravação finalizada.\n"
+                      f"Frames gravados: {integrity_results['total_recorded']}\n"
+                      f"Frames processados: {integrity_results['total_processed']}\n"
+                      f"Frames não encontrados: {len(integrity_results['missing_frames'])}\n"
+                      f"Frames extras: {len(integrity_results['extra_frames'])}")
+            
+            messagebox.showinfo("Informação", message)
+            logging.info(f"Gravação finalizada - {message}")
+        
         stop_event.set()
-#        if detection_thread.is_alive():  # Verifica se a thread está ativa antes de tentar juntar
-#           detection_thread.join() # Aguarda até que a thread de detecção termine
-        # Iniciar uma thread para aguardar a conclusão da detecção
-        threading.Thread(target=wait_for_detection_to_finish).start()
-        # Limpa o status de processamento após o término
-        root.after(0, lambda: processing_status.set(""))
-
-        # Reinicia a câmera para uma nova sessão de gravação
+        
+        if out is not None:
+            out.release()
+            out = None
+        if csv_file is not None:
+            csv_file.close()
+            csv_file = None
+        
         restart_camera()
 
 def restart_camera():
@@ -517,6 +643,7 @@ def end_program_button():
         stop_recording_button()
     # Liberar recursos
     cap.release()
+    arduino.close()
     cv2.destroyAllWindows()
     # Encerrar a interface Tkinter
     root.quit()
@@ -524,6 +651,45 @@ def end_program_button():
     import sys
     sys.exit()
 
+def verify_frame_integrity(video_path, csv_path):
+    processed_frames = set()
+    recorded_frames = set()
+    
+    logging.info(f"Iniciando verificação de integridade: {os.path.basename(video_path)}")
+    
+    try:
+        # Verificar frames do vídeo
+        cap = cv2.VideoCapture(video_path)
+        frame_count = 0
+        while True:
+            ret, _ = cap.read()
+            if not ret:
+                break
+            recorded_frames.add(frame_count)
+            frame_count += 1
+        cap.release()
+        
+        # Verificar registros do CSV
+        with open(csv_path, 'r') as f:
+            csv_reader = csv.reader(f)
+            next(csv_reader)  # Pular cabeçalho
+            for row in csv_reader:
+                processed_frames.add(int(row[1]))  # coluna frame_count
+        
+        # Calcular estatísticas
+        results = {
+            'total_recorded': len(recorded_frames),
+            'total_processed': len(processed_frames),
+            'missing_frames': processed_frames - recorded_frames,
+            'extra_frames': recorded_frames - processed_frames
+        }
+        
+        logging.info(f"Resultados da verificação de integridade: {results}")
+        return results
+        
+    except Exception as e:
+        logging.error(f"Erro na verificação de integridade: {e}")
+        return None
 
 # Iniciar threads
 threading.Thread(target=frame_capture_thread, daemon=True).start()
