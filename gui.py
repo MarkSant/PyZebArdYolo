@@ -287,7 +287,7 @@ class ApplicationGUI:
             self.camera = None
         if self.active_frame_source:
              self.active_frame_source.release()
-        self.active_frame_source = None
+             self.active_frame_source = None
 
         self.project_manager = ProjectManager()
         self._create_welcome_frame()
