@@ -101,7 +101,6 @@ class Recorder:
             writer.writerow(['x', 'y'])
             writer.writerows(config.POLYGON)
             f.flush()
-            os.fsync(f.fileno())
 
         # Save Areas of Interest (Squares)
         areas_of_interest_filename = os.path.join(folder_path, f"2_AreasOfInterest_{self.base_name}.csv")
