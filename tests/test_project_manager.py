@@ -16,6 +16,7 @@ class TestProjectManager(unittest.TestCase):
         self.test_dir = "temp_test_project_dir"
         os.makedirs(self.test_dir, exist_ok=True)
         # Suppress messagebox popups during tests
+        import tkinter.messagebox
         self.original_showerror = sys.modules['tkinter.messagebox'].showerror
         sys.modules['tkinter.messagebox'].showerror = lambda title, message: None
 
