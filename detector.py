@@ -39,7 +39,7 @@ class Detector:
         scale_y = actual_height / base_height
 
         # Scale polygon
-        self.scaled_polygon = (config.POLYGON * [scale_x, scale_y]).astype(np.int32)
+        self.scaled_polygon = (config.POLYGON * np.array([scale_x, scale_y])).astype(np.int32)
 
         # Scale squares
         self.scaled_squares = []
