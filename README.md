@@ -1,6 +1,19 @@
-# Zebtrack Controller
+# PyZebArdYolo
 
-Zebtrack Controller is a graphical application designed for object tracking in video streams, with integration for hardware control via Arduino. It is intended for scientific research and can be used with both live camera feeds and pre-recorded videos.
+PyZebArdYolo is a real-time acquisition unit for behavioral neuroscience: a
+graphical application that couples a consumer webcam to YOLO11-based object
+detection (via Ultralytics / OpenVINO) and an Arduino Uno R3, delivering
+position-contingent visual stimulation (RGB LEDs) to adult zebrafish
+(*Danio rerio*) in closed loop, fully offline (no internet, no dedicated
+GPU). It runs live camera feeds or pre-recorded videos and is intended for
+scientific research.
+
+> **Not the same software as "DRerio LogAI".** DRerio LogAI is a separate,
+> more advanced multi-aquarium tracking and statistical-reporting platform
+> by the same authors, registered as a computer program with INPI (Brazil)
+> under process **BR 51 2026 005215-7**, titular **Universidade Estadual
+> Paulista "Júlio de Mesquita Filho" (UNESP)**. PyZebArdYolo is not covered
+> by that registration and is released independently. See `NOTICE` §0.
 
 ## Installation
 
@@ -8,8 +21,8 @@ This project is managed with [Poetry](https://python-poetry.org/).
 
 1.  **Clone the repository:**
     ```bash
-    git clone https://github.com/your-username/zebtrack-controller.git
-    cd zebtrack-controller
+    git clone https://github.com/MarkSant/PyZebArdYolo.git
+    cd PyZebArdYolo
     ```
 
 2.  **Install Poetry:**
@@ -76,6 +89,24 @@ graph TD
 *   **Arduino**: Manages communication with an Arduino board for hardware I/O.
 *   **Settings**: Loads and manages application settings from configuration files.
 
+## Authors
+
+*   Marco Antônio Sant'Ana Camargos — São Paulo State University (UNESP), Botucatu, Brazil
+*   Percília Cardoso Giaquinto — São Paulo State University (UNESP), Botucatu, Brazil
+
+## Citation
+
+If you use this software in your research, please cite it — see [`CITATION.cff`](CITATION.cff).
+
 ## License
 
-This project is licensed under the MIT License - see the [LICENSE](LICENSE) file for details.
+The authors' own code (and the Arduino firmware) is MIT-licensed. However,
+the **combined, distributed application** bundles Ultralytics YOLO
+(AGPL-3.0), which makes the effective license of the distributed work
+**AGPL-3.0**. Trained weights and the training dataset carry their own
+attribution requirements (CC BY 4.0), and hardware design files are
+CERN-OHL-S v2.
+
+See [`LICENSE`](LICENSE) for the MIT text and [`NOTICE`](NOTICE) for the
+full breakdown (third-party licenses, dataset attribution, and what
+"effective AGPL-3.0" means for redistribution).

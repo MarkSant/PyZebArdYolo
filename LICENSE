@@ -1,4 +1,10 @@
-Copyright (c) 2025 The Project Developers
+Copyright (c) 2025 Marco Antônio Sant'Ana Camargos and Percília Cardoso Giaquinto
+(Universidade Estadual Paulista - UNESP, Botucatu/SP, Brazil)
+
+NOTE: this MIT license covers the authors' own source code only. The
+combined, distributed application also bundles Ultralytics YOLO (AGPL-3.0),
+which imposes additional obligations on redistribution. See NOTICE for the
+full breakdown before you redistribute or deploy a modified version.
 
 Permission is hereby granted, free of charge, to any person obtaining a copy
 of this software and associated documentation files (the "Software"), to deal

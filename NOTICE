@@ -1,0 +1,89 @@
+PyZebArdYolo — NOTICE
+=====================
+
+Copyright (c) 2025 Marco Antônio Sant'Ana Camargos and Percília Cardoso
+Giaquinto (UNESP, Botucatu/SP, Brazil).
+
+------------------------------------------------------------------------
+0. Relationship to DRerio LogAI
+------------------------------------------------------------------------
+PyZebArdYolo is the real-time acquisition unit (webcam + YOLO11 detection +
+Arduino-driven position-contingent stimulation) developed by the same
+authors. It is NOT the same software as "DRerio LogAI: Software de
+Rastreamento Comportamental Automatizado de Peixes-Zebra com Visão
+Computacional, Suporte Multi-Aquário e Geração de Relatórios Estatísticos",
+a separate, more advanced multi-aquarium tracking/reporting platform whose
+titular (per Brazilian copyright registration, Lei 9.609/98) is the
+Universidade Estadual Paulista "Júlio de Mesquita Filho" (UNESP), INPI
+process BR 51 2026 005215-7, filed 07/07/2026. This repository is
+independent of that registration and no PI/AUIN authorization was required
+to make it public.
+
+------------------------------------------------------------------------
+1. License of the original code in this repository
+------------------------------------------------------------------------
+The source code and Arduino firmware originally written by the authors are
+licensed under the MIT License (see the LICENSE file). You may reuse the
+authors' own code under MIT terms.
+
+------------------------------------------------------------------------
+2. Effective license of the distributed application (IMPORTANT)
+------------------------------------------------------------------------
+This application depends on, and is distributed together with, Ultralytics
+YOLO, which is licensed under the GNU Affero General Public License v3.0
+(AGPL-3.0). Because the program is a work based on AGPL-3.0 software, the
+COMBINED, DISTRIBUTED WORK is governed by the AGPL-3.0.
+
+In practice this means:
+  * If you redistribute this software (modified or not), you must make the
+    complete corresponding source code available under AGPL-3.0.
+  * If you run a modified version that users interact with over a network,
+    AGPL-3.0 section 13 requires you to offer them that source code.
+  * The authors' own contributions remain available under MIT, but this does
+    not remove the AGPL-3.0 obligations created by the Ultralytics dependency.
+
+To avoid AGPL-3.0 obligations you would need a separate commercial license
+from Ultralytics, or you would have to replace the detector with a
+permissively-licensed model.
+
+------------------------------------------------------------------------
+3. Trained model weights
+------------------------------------------------------------------------
+The trained detection weights (e.g. best12.pt and the exported OpenVINO IR)
+were produced with Ultralytics YOLO (YOLO11) and, per Ultralytics' terms,
+YOLO-trained models are also subject to AGPL-3.0.
+
+They were trained on the Roboflow dataset "ZebraFish-Detection-14", which is
+licensed CC BY 4.0. Attribution is required (see section 5).
+
+------------------------------------------------------------------------
+4. Third-party components and their licenses
+------------------------------------------------------------------------
+  Ultralytics YOLO (YOLO11) ............ AGPL-3.0   (copyleft - see section 2)
+  OpenVINO ............................. Apache-2.0
+  OpenCV (opencv-python) ............... Apache-2.0
+  pyserial ............................. BSD-3-Clause
+  NumPy ................................ BSD-3-Clause
+  Pydantic ............................. MIT
+  structlog ............................ MIT / Apache-2.0
+  Pillow ............................... HPND (PIL/MIT-CMU)
+  PyYAML ............................... MIT
+(Confirm the exact license and version of each dependency before release.)
+
+Hardware design files (schematics, arena CAD, BOM): CERN-OHL-S v2.
+
+------------------------------------------------------------------------
+5. Required attribution (dataset)
+------------------------------------------------------------------------
+Training dataset: "ZebraFish-Detection-14", Roboflow Universe, licensed under
+CC BY 4.0. When you use these weights or dataset, credit the dataset and
+its creators, link to the CC BY 4.0 license, and indicate any changes made.
+
+------------------------------------------------------------------------
+6. How to cite
+------------------------------------------------------------------------
+If you use this hardware/software in your research, please cite the
+accompanying HardwareX paper and this repository (see CITATION.cff).
+
+------------------------------------------------------------------------
+Disclaimer: this NOTICE is informational, not legal advice.

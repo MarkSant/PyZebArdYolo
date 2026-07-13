@@ -8,6 +8,7 @@ import structlog
 
 from zebtrack.io.frame_source import FrameSource
 from zebtrack.settings import settings
+from zebtrack import latency_logging
 
 log = structlog.get_logger()
 
@@ -59,6 +60,7 @@ class Camera(FrameSource):
                     continue
 
             ret, frame = self.cap.read()
+            latency_logging.FRAME_T0 = time.perf_counter()
 
             if not ret:
                 self.cap.release()

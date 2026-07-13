@@ -1,6 +1,7 @@
 import time
 from types import TracebackType
 from typing import Optional, Type
+from zebtrack import latency_logging
 
 import serial
 import structlog
@@ -33,19 +34,17 @@ class Arduino:
             return True
         try:
             self.ser = serial.Serial(self.port, self.baud_rate, timeout=2)
-            ready_signal = self.ser.readline().decode("utf-8").strip()
-            if ready_signal == "Arduino is ready.":
-                log.info("arduino.connect.success", port=self.port)
-                return True
-            else:
-                log.warning(
-                    "arduino.connect.no_ready_signal",
-                    port=self.port,
-                    received=ready_signal,
-                )
-                self.ser.close()
-                self.ser = None
-                return False
+            # Opening the port auto-resets the Arduino Uno (DTR toggle). Wait
+            # for the board to finish booting before treating it as available.
+            time.sleep(2)
+            # Some sketches print a banner on boot; capture it if present, but
+            # do not require it (the LED-controller firmware sends nothing).
+            banner = ""
+            if self.ser.in_waiting:
+                banner = self.ser.readline().decode("utf-8", errors="replace").strip()
+            self.ser.reset_input_buffer()
+            log.info("arduino.connect.success", port=self.port, banner=banner)
+            return True
         except (serial.SerialException, OSError) as e:
             log.warning(
                 "arduino.connect.failed", port=self.port, exc_info=e
@@ -80,21 +79,27 @@ class Arduino:
 
         if self.ser and self.ser.is_open:
             command = f"{command_num}\n"
+            t_send = time.perf_counter()
             try:
                 self.ser.write(command.encode("utf-8"))
                 log.info("arduino.command.sent", command=command_num)
 
-                response = self.ser.readline().decode("utf-8").strip()
-                if response == "OK":
-                    log.info("arduino.command.ack", command=command_num)
-                    return True
-                else:
-                    log.warning(
-                        "arduino.command.nack",
-                        command=command_num,
-                        response=response,
+                response = self.ser.readline().decode("utf-8", errors="replace").strip()
+                # Drain any extra lines the firmware may emit per command so they
+                # don't leak into the next command's response.
+                t_ack = time.perf_counter()
+                self.ser.reset_input_buffer()
+                latency_logging.log_trigger(command_num, t_send, t_ack,
+                                        latency_logging.FRAME_T0)
+                if response:
+                    log.info(
+                        "arduino.command.ack", command=command_num, response=response
                     )
-                    return False
+                else:
+                    log.warning("arduino.command.no_response", command=command_num)
+                # The command was written successfully; treat it as sent even if
+                # the firmware does not reply.
+                return True
             except serial.SerialException as e:
                 log.error("arduino.command.send_error", exc_info=e)
                 return False

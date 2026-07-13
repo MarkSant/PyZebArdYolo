@@ -1,22 +1,45 @@
 cff-version: 1.2.0
-message: "If you use this software in your research, please cite it as below."
+message: "If you use this software, please cite both the software and the accompanying paper."
+title: "PyZebArdYolo"
+abstract: "Open-source, low-cost acquisition unit for real-time YOLO11 detection and position-contingent visual stimulation of adult zebrafish (Danio rerio). Couples a consumer webcam to an Arduino Uno R3 and runs offline on a standard laptop (Intel OpenVINO, no dedicated GPU)."
+type: software
 authors:
-  - family-names: "Your Family Name"
-    given-names: "Your Given Name"
-    orcid: "https://orcid.org/XXXX-XXXX-XXXX-XXXX"
-  - name: "The Zebtrack Controller Project"
-title: "Zebtrack Controller"
-version: 0.1.0
-date-released: 2025-08-15
-abstract: "A graphical application for object tracking in video streams, with integration for hardware control."
+  - family-names: "Sant'Ana Camargos"
+    given-names: "Marco Antônio"
+    affiliation: "São Paulo State University (UNESP), Botucatu, Brazil"
+    email: "marco.sant@unesp.br"
+    orcid: "https://orcid.org/0009-0000-0014-1485"
+  - family-names: "Giaquinto"
+    given-names: "Percília Cardoso"
+    affiliation: "São Paulo State University (UNESP), Botucatu, Brazil"
+    email: "percilia.giaquinto@unesp.br"
+    orcid: "https://orcid.org/0000-0003-4591-4415"
+version: "0.1.0"
+date-released: "2025-08-16"   # UPDATE to the actual public release date
+license: AGPL-3.0-only        # effective license of the distributed work (bundles Ultralytics YOLO, AGPL-3.0); authors' own code is MIT — see NOTICE
+license-url: "https://www.gnu.org/licenses/agpl-3.0.html"
+repository-code: "https://github.com/MarkSant/PyZebArdYolo"
+url: "https://github.com/MarkSant/PyZebArdYolo"
+# doi: "10.5281/zenodo.XXXXXXX"   # add after archiving the release on Zenodo
 keywords:
-  - "object tracking"
-  - "behavioral analysis"
-  - "zebrafish"
-  - "arduino"
-  - "computer vision"
-license: MIT
-repository-code: "https://github.com/your-username/your-repository" # TODO: Replace with actual repository URL
-# identifiers:
-#   - type: doi
-#     value: 10.5281/zenodo.XXXXXXX # TODO: Replace with your Zenodo DOI after archiving
+  - zebrafish
+  - behavioural neuroscience
+  - object detection
+  - YOLO11
+  - Arduino
+  - closed-loop
+  - open-source hardware
+  - OpenVINO
+preferred-citation:
+  type: article
+  title: "An open-source, low-cost system for real-time YOLO11 detection and position-contingent visual stimulation of adult zebrafish (PyZebArdYolo acquisition unit)"
+  authors:
+    - family-names: "Sant'Ana Camargos"
+      given-names: "Marco Antônio"
+      affiliation: "São Paulo State University (UNESP), Botucatu, Brazil"
+    - family-names: "Giaquinto"
+      given-names: "Percília Cardoso"
+      affiliation: "São Paulo State University (UNESP), Botucatu, Brazil"
+  journal: "HardwareX"
+  year: 2026          # UPDATE on acceptance
+  # doi: "10.1016/j.ohx.XXXX.eXXXXX"   # add the article DOI when available
