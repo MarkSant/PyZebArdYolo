@@ -91,8 +91,8 @@ graph TD
 
 ## Authors
 
-*   Marco Antônio Sant'Ana Camargos — São Paulo State University (UNESP), Botucatu, Brazil
-*   Percília Cardoso Giaquinto — São Paulo State University (UNESP), Botucatu, Brazil
+*   Marco Antônio Sant'Ana Camargos — São Paulo State University (UNESP), Botucatu, Brazil — marco.sant@unesp.br
+*   Percília Cardoso Giaquinto — São Paulo State University (UNESP), Botucatu, Brazil — percilia.giaquinto@unesp.br
 
 ## Citation
 
