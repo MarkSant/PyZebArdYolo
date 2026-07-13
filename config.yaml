@@ -11,7 +11,7 @@ camera:
 
 arduino:
   # The serial port your Arduino is connected to (e.g., COM5 on Windows, /dev/ttyACM0 on Linux).
-  port: 'COM3'
+  port: 'COM5'
   baud_rate: 9600
 
 yolo_model:

@@ -1,11 +1,11 @@
 import time
 from types import TracebackType
 from typing import Optional, Type
-from zebtrack import latency_logging
 
 import serial
 import structlog
 
+from zebtrack import latency_logging
 from zebtrack.settings import settings
 
 log = structlog.get_logger()
@@ -89,17 +89,26 @@ class Arduino:
                 # don't leak into the next command's response.
                 t_ack = time.perf_counter()
                 self.ser.reset_input_buffer()
-                latency_logging.log_trigger(command_num, t_send, t_ack,
-                                        latency_logging.FRAME_T0)
-                if response:
+                latency_logging.log_trigger(
+                    command_num,
+                    t_send,
+                    t_ack,
+                    latency_logging.FRAME_T0,
+                )
+                if response == "OK":
                     log.info(
                         "arduino.command.ack", command=command_num, response=response
                     )
+                    return True
+                if response:
+                    log.warning(
+                        "arduino.command.nack",
+                        command=command_num,
+                        response=response,
+                    )
                 else:
                     log.warning("arduino.command.no_response", command=command_num)
-                # The command was written successfully; treat it as sent even if
-                # the firmware does not reply.
-                return True
+                return False
             except serial.SerialException as e:
                 log.error("arduino.command.send_error", exc_info=e)
                 return False

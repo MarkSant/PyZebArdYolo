@@ -6,9 +6,9 @@ import cv2
 import numpy as np
 import structlog
 
+from zebtrack import latency_logging
 from zebtrack.io.frame_source import FrameSource
 from zebtrack.settings import settings
-from zebtrack import latency_logging
 
 log = structlog.get_logger()
 
