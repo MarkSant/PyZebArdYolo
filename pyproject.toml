@@ -1,8 +1,11 @@
 [tool.poetry]
 name = "zebtrack-controller"
 version = "0.1.0"
-description = "A graphical application for object tracking in video streams, with integration for hardware control via Arduino."
-authors = ["The Project Developers <placeholder@example.com>"]
+description = "PyZebArdYolo: real-time YOLO11 detection and position-contingent visual stimulation acquisition unit for adult zebrafish (Danio rerio)."
+authors = [
+    "Marco Antônio Sant'Ana Camargos <marco.sant@unesp.br>",
+    "Percília Cardoso Giaquinto <percilia.giaquinto@unesp.br>",
+]
 license = "MIT"
 readme = "README.md"
 packages = [{include = "zebtrack", from = "src"}]

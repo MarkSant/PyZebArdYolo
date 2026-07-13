@@ -1,6 +1,7 @@
 import time
 from types import TracebackType
 from typing import Optional, Type
+from zebtrack import latency_logging
 
 import serial
 import structlog
@@ -78,6 +79,7 @@ class Arduino:
 
         if self.ser and self.ser.is_open:
             command = f"{command_num}\n"
+            t_send = time.perf_counter()
             try:
                 self.ser.write(command.encode("utf-8"))
                 log.info("arduino.command.sent", command=command_num)
@@ -85,7 +87,10 @@ class Arduino:
                 response = self.ser.readline().decode("utf-8", errors="replace").strip()
                 # Drain any extra lines the firmware may emit per command so they
                 # don't leak into the next command's response.
+                t_ack = time.perf_counter()
                 self.ser.reset_input_buffer()
+                latency_logging.log_trigger(command_num, t_send, t_ack,
+                                        latency_logging.FRAME_T0)
                 if response:
                     log.info(
                         "arduino.command.ack", command=command_num, response=response
