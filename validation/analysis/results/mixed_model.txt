@@ -1,0 +1,61 @@
+MIXED-EFFECTS MODELS — PyZebArdYolo validation
+Run: 2026-07-15 17:30:10.270308 | R version 4.5.3 (2026-03-11 ucrt)
+
+======================================================================
+METHOD: PyZebArdYolo  (N pairs = 4115, videos = 14)
+======================================================================
+
+--- x_diff ~ 1 + (1|video_id) ---
+  intercept (bias) = -2.144 [-2.570, -1.718]
+  var between-video = 0.0000 | var residual = 194.1228
+
+--- y_diff ~ 1 + (1|video_id) ---
+  intercept (bias) = -1.946 [-2.389, -1.503]
+  var between-video = 0.2864 | var residual = 126.2456
+
+--- radial ~ 1 + (1|video_id) ---
+  intercept (bias) = 13.230 [10.735, 15.725]
+  var between-video = 22.2367 | var residual = 133.1885
+
+  weighted ICC_X = 0.9974 | ICC_Y = 0.9856 | median radial = 10.9 px
+
+======================================================================
+METHOD: ZebTrack  (N pairs = 4201, videos = 14)
+======================================================================
+
+--- x_diff ~ 1 + (1|video_id) ---
+  intercept (bias) = -5.368 [-9.596, -1.140]
+  var between-video = 52.8478 | var residual = 3691.8966
+
+--- y_diff ~ 1 + (1|video_id) ---
+  intercept (bias) = -1.645 [-4.478, 1.188]
+  var between-video = 24.6985 | var residual = 1364.2062
+
+--- radial ~ 1 + (1|video_id) ---
+  intercept (bias) = 51.243 [46.449, 56.036]
+  var between-video = 75.5245 | var residual = 2463.1128
+
+  weighted ICC_X = 0.9475 | ICC_Y = 0.8392 | median radial = 43.0 px
+
+======================================================================
+METHOD: Observer_2  (N pairs = 903, videos = 3)
+======================================================================
+
+--- x_diff ~ 1 + (1|video_id) ---
+  intercept (bias) = -1.011 [-2.275, 0.252]
+  var between-video = 0.7571 | var residual = 147.2988
+
+--- y_diff ~ 1 + (1|video_id) ---
+  intercept (bias) = -0.162 [-0.603, 0.279]
+  var between-video = 0.0000 | var residual = 45.6807
+
+--- radial ~ 1 + (1|video_id) ---
+  intercept (bias) = 8.155 [5.633, 10.676]
+  var between-video = 4.5508 | var residual = 124.9244
+
+  weighted ICC_X = 0.9983 | ICC_Y = 0.9958 | median radial = 6.0 px
+
+======================================================================
+COMPARISON: ZebTrack vs PyZebArdYolo — radial ~ method + (1|video_id)
+======================================================================
+  beta(ZebTrack) = +38.02 px  95%CI[36.45, 39.59]  t = 47.6

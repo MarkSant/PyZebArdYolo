@@ -120,3 +120,6 @@ venv.bak/
 # PyTorch model files
 *.pt
 *.pth
+
+# keep the published trained weights (design file for the paper)
+!best12.pt

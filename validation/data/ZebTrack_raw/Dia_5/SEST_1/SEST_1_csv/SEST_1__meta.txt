@@ -1,0 +1,9 @@
+fonte=SEST_1.mat
+fps=30
+passo=30
+flipY=1
+alturaImagem=720
+larguraImagem=1280
+metodo_frame=assumido
+b_offset=-29
+gerado_em=2026-06-24 12:55:04
