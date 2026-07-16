@@ -15,6 +15,11 @@ scientific research.
 > Paulista "Júlio de Mesquita Filho" (UNESP)**. PyZebArdYolo is not covered
 > by that registration and is released independently. See `NOTICE` §0.
 
+> **Package name note.** The internal Python package is named `zebtrack` for
+> legacy reasons. This is **unrelated to *ZebTrack***, the separate MATLAB
+> tracker (Luchiari lab, UFRN) that appears only as a comparator in the
+> validation study under [`validation/`](validation/).
+
 ## Installation
 
 This project is managed with [Poetry](https://python-poetry.org/).
@@ -88,6 +93,26 @@ graph TD
 *   **Recorder**: Handles the saving of output video and tracking data.
 *   **Arduino**: Manages communication with an Arduino board for hardware I/O.
 *   **Settings**: Loads and manages application settings from configuration files.
+
+## Repository layout
+
+Besides the control software (`src/zebtrack/`), this repository ships the
+material needed to build and reproduce the apparatus described in the
+hardware paper:
+
+*   **`firmware/Program_Final.ino`** — Arduino Uno R3 firmware (serial LED
+    state machine; pins D13–D10, 9600 baud).
+*   **`best12.pt`** + **`openvino_model_cache/best12_openvino_model/`** — the
+    trained YOLO11s weights (PyTorch and the exported OpenVINO IR).
+*   **`config.yaml`** — camera, Arduino, detector and ROI configuration.
+*   **`validation/`** — the tracking-fidelity validation dataset and analysis
+    (raw annotations, paired coordinates, metrics, figures and the analysis
+    scripts). See [`validation/README.md`](validation/README.md). Scope: the
+    PyZebArdYolo apparatus only; the *DRerio LogAI* platform is validated
+    separately in its own repository.
+*   **`hardware/`** — hardware design files for the custom acrylic arena
+    (CAD). *(To be added: STL mesh and the editable source; a dimensioned
+    drawing is in the paper.)*
 
 ## Authors
 

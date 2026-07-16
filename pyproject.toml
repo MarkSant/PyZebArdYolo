@@ -32,6 +32,9 @@ build-backend = "poetry.core.masonry.api"
 
 [tool.ruff]
 line-length = 88
+# The validation deposit is standalone data-analysis code, not part of the
+# shipped package; keep it out of the package lint/CI gate.
+extend-exclude = ["validation"]
 
 [tool.ruff.lint]
 select = ["E", "F", "I", "W"]
