@@ -1,0 +1,9 @@
+Designator,Component,Number,Cost per unit (USD),Total cost (USD),Cost (BRL),Source of materials,Material type,Link
+U1,"Arduino Uno R3 (compatible, ATmega328P, with USB)",1,15.50,15.50,83.59,Mercado Livre,Electronics – microcontroller board,https://www.mercadolivre.com.br/placa-compativel-arduino-uno-r3-atmega328-smd-com-cabo-pino/p/MLB2038770279
+D1-D12,KY-009 RGB LED module (SMD 5050),12,1.09,13.10,70.90,Mercado Livre (10-pack),Electronics – RGB LED module,https://www.mercadolivre.com.br/10-x-modulo-led-rgb-smd-5050-ky009-para-arduino/up/MLBU2255050433
+W1,Jumper wires (M-M/M-F/F-F) + protoboard 830,1,6.60,6.60,35.80,Mercado Livre,Electronics – wiring,https://www.mercadolivre.com.br/60-pcs-jumper-macho-x-macho-x-femea-x-femea-20cm-arduino-pic/up/MLBU1758593274
+E1,Arduino enclosure box (acrylic),1,4.32,4.32,23.31,Mercado Livre,Acrylic – enclosure,https://www.mercadolivre.com.br/gabinete-caixa-case-box-arduino-uno-de-acrilico/up/MLBU1767326571
+A1,"Custom acrylic arena (cross-shaped, made to order)",1,75.40,75.40,406.54,Acrílicos Mais,Acrylic – behavioural arena,https://acrilicosmais.com.br
+,Subtotal — acquisition loop,,,115.00,620.00,,,(excludes freight R$140/US$26, webcam and host)
+CAM1,"Webcam Logitech C270 (720p, 30 fps)",1,0.00,0.00,0,Logitech (already owned; MSRP US$ 39.99),Electronics – USB webcam,https://www.logitech.com/en-us/shop/p/c270-hd-webcam
+PC1,"Host computer (reference: Samsung Galaxy Book Pro 360, i7-1165G7, Iris Xe, 16 GB)",1,0.00,0.00,0,already owned,Computer,
