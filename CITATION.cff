@@ -20,7 +20,7 @@ license: AGPL-3.0-only        # effective license of the distributed work (bundl
 license-url: "https://www.gnu.org/licenses/agpl-3.0.html"
 repository-code: "https://github.com/MarkSant/PyZebArdYolo"
 url: "https://github.com/MarkSant/PyZebArdYolo"
-# doi: "10.5281/zenodo.XXXXXXX"   # add after archiving the release on Zenodo
+doi: "10.5281/zenodo.21386270"
 keywords:
   - zebrafish
   - behavioural neuroscience

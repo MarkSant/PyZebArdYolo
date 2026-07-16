@@ -1,5 +1,7 @@
 # PyZebArdYolo
 
+[![DOI](https://zenodo.org/badge/DOI/10.5281/zenodo.21386270.svg)](https://doi.org/10.5281/zenodo.21386270)
+
 PyZebArdYolo is a real-time acquisition unit for behavioral neuroscience: a
 graphical application that couples a consumer webcam to YOLO11-based object
 detection (via Ultralytics / OpenVINO) and an Arduino Uno R3, delivering
