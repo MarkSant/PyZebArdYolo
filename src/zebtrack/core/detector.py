@@ -42,6 +42,9 @@ class Detector:
         )
         self.base_squares = settings.detection_zones.squares
         self.scaled_polygon = self.base_polygon
+        # Latency instrumentation: populated by process_frame.
+        self.last_decision: dict | None = None
+        self.last_decision_perf: float | None = None
         self.scaled_squares = self.base_squares
         self.update_scaling(
             settings.camera.desired_width, settings.camera.desired_height
@@ -97,6 +100,10 @@ class Detector:
         Processes a single frame for object detection and state tracking.
         """
         start_time = time.perf_counter()
+        # Metadata about the decision taken on this frame, published for the
+        # latency logger. Kept on the instance rather than added to the return
+        # tuple so that every existing caller keeps working unchanged.
+        self.last_decision = None
 
         # 1. Delegate actual detection to the loaded plugin
         predictions = self.plugin.detect(frame)
@@ -124,6 +131,11 @@ class Detector:
                                     command_to_send = (
                                         settings.detection_zones.enter_commands[index]
                                     )
+                                    self.last_decision = {
+                                        "roi": index + 1,
+                                        "edge": "enter",
+                                        "token": command_to_send,
+                                    }
                                     found_object_for_state_change = True
                                     break
                         elif self.flag == 1:  # Looking for exit
@@ -139,10 +151,20 @@ class Detector:
                                         self.current_square - 1
                                     ]
                                 )
+                                self.last_decision = {
+                                    "roi": self.current_square,
+                                    "edge": "exit",
+                                    "token": command_to_send,
+                                }
                                 self.current_square = 0
                                 found_object_for_state_change = True
 
         end_time = time.perf_counter()
+        # Published for the latency logger: the instant the ROI decision became
+        # available, i.e. the boundary between the compute leg and the I/O leg.
+        self.last_decision_perf = end_time
+        if self.last_decision is not None:
+            self.last_decision["t_decision_perf"] = end_time
         log.debug(
             "frame.processing.time",
             duration_ms=(end_time - start_time) * 1000,

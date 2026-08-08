@@ -26,6 +26,7 @@ import cv2
 import structlog
 
 # Import custom modules
+from zebtrack import latency_logging
 from zebtrack.core.detector import Detector, draw_overlay
 from zebtrack.io.camera import Camera
 from zebtrack.io.video_source import VideoFileSource
@@ -58,6 +59,9 @@ class ApplicationGUI:
         self.progress_bar = None
         self.progress_labels: dict[str, StringVar] = {}
         self.video_label: Label | None = None
+        # Live preview hand-off state (see _post_live_preview).
+        self._preview_pending = False
+        self._preview_last_t = 0.0
 
         # User options
         self.processing_interval_var = StringVar(
@@ -301,27 +305,55 @@ class ApplicationGUI:
         """
         Loop para capturar quadros de uma fonte AO VIVO (câmera).
         """
+        try:
+            self._live_frame_capture_loop_body()
+        except Exception:  # noqa: BLE001 - a silent thread death freezes the app
+            log.exception("gui.capture_thread.crashed")
+        finally:
+            log.info("gui.live_frame_capture_loop.finished")
+
+    def _live_frame_capture_loop_body(self):
         live_frame_count = 0
         while not self.controller.program_exit_event.is_set():
-            if not self.controller.active_frame_source:
+            source = self.controller.active_frame_source
+            if not source:
                 time.sleep(0.1)
                 continue
 
-            ret, frame = self.controller.active_frame_source.get_frame()
+            # Take the frame together with its own capture timestamp and the
+            # camera reader's sequence number. Sources that predate this API
+            # (e.g. VideoFileSource) fall back to the two-tuple form.
+            if hasattr(source, "get_frame_ts"):
+                ret, frame, t_capture, cam_seq = source.get_frame_ts()
+            else:
+                ret, frame = source.get_frame()
+                t_capture, cam_seq = time.perf_counter(), None
             if not ret:
                 log.error("gui.capture_thread.get_frame_failed")
                 time.sleep(0.5)
                 continue
 
             live_frame_count += 1
+            latency_logging.note_capture(t_capture)
 
             if not self.controller.frame_queue.full():
-                self.controller.frame_queue.put((live_frame_count, frame.copy()))
-            if (
-                self.controller.is_capturing_for_video
-                and not self.controller.video_queue.full()
-            ):
-                self.controller.video_queue.put(frame.copy())
+                self.controller.frame_queue.put(
+                    (live_frame_count, frame.copy(), t_capture, cam_seq)
+                )
+            else:
+                latency_logging.note_drop("analysis")
+            if self.controller.is_capturing_for_video:
+                if not self.controller.video_queue.full():
+                    self.controller.video_queue.put(frame.copy())
+                    # One ledger row per frame that will actually be written,
+                    # in write order. This is what makes the video frame index
+                    # recoverable: neither live_frame_count nor the camera
+                    # sequence indexes the mp4 once a drop occurs.
+                    latency_logging.log_video_frame(
+                        live_frame_count, cam_seq, t_capture
+                    )
+                else:
+                    latency_logging.note_drop("video")
 
             time.sleep(1 / (settings.video_processing.fps * 1.5))
 
@@ -329,18 +361,40 @@ class ApplicationGUI:
         """
         Loop para processar quadros de uma fonte AO VIVO.
         """
+        try:
+            self._live_processing_loop_body()
+        except Exception:  # noqa: BLE001 - see _live_frame_capture_loop
+            log.exception("gui.processing_thread.crashed")
+        finally:
+            log.info("gui.live_processing_loop.finished")
+
+    def _live_processing_loop_body(self):
         while not self.controller.program_exit_event.is_set():
             try:
-                frame_number, frame = self.controller.frame_queue.get(timeout=1)
+                item = self.controller.frame_queue.get(timeout=1)
             except queue.Empty:
                 continue
+            if len(item) == 4:
+                frame_number, frame, t_capture, cam_seq = item
+            else:  # tolerate the legacy two-tuple
+                frame_number, frame = item
+                t_capture, cam_seq = None, None
 
             if self.controller.is_processing:
-                detections, command = self.controller.detector.process_frame(
-                    frame, "live"
-                )
+                detector = self.controller.detector
+                detections, command = detector.process_frame(frame, "live")
                 if command is not None:
-                    self.controller.arduino.send_command(command)
+                    meta = detector.last_decision or {}
+                    # Async: the analysis thread must not block on the port.
+                    self.controller.arduino.send_command_async(
+                        command,
+                        frame_t0=t_capture,
+                        t_decision=detector.last_decision_perf,
+                        frame=frame_number,
+                        cam_seq=cam_seq,
+                        roi=meta.get("roi"),
+                        edge=meta.get("edge"),
+                    )
                 if self.controller.is_recording and detections:
                     timestamp = time.time() - self.controller.recorder.start_time
                     self.controller.recorder.write_detection_data(
@@ -348,12 +402,60 @@ class ApplicationGUI:
                     )
                 draw_overlay(frame, detections, self.controller.detector)
 
-            cv2.imshow("Live View", frame)
-            if cv2.waitKey(1) & 0xFF == ord("q"):
-                self.controller.on_close()
-                break
-        cv2.destroyAllWindows()
-        log.info("gui.live_processing_loop.finished")
+            # Preview is rendered by Tk on the main thread. It must NOT be done
+            # with cv2.imshow/cv2.waitKey from here: HighGUI drives a Win32
+            # message loop owned by the calling thread, and while Tk runs its
+            # own (modal dialogs included) on the main thread the two queues can
+            # become attached and waitKey never returns. The symptom is exactly
+            # this: the live window stops updating on a correctly drawn frame,
+            # the Tk window stays responsive, and shutdown hangs forever in
+            # processing_thread.join().
+            self._post_live_preview(frame)
+
+    # Preview cadence for the live view. The analysis loop runs as fast as the
+    # detector allows; the screen does not need to.
+    _PREVIEW_MIN_INTERVAL_S = 1 / 20
+    _PREVIEW_MAX_W = 800
+
+    def _post_live_preview(self, frame):
+        """Hand a frame to the Tk main thread for display, dropping if behind.
+
+        Called from the processing thread. Never blocks it: if the previous
+        frame has not been drawn yet, or the cadence budget is not met, the
+        frame is simply skipped.
+        """
+        now = time.perf_counter()
+        if self._preview_pending:
+            return
+        if now - self._preview_last_t < self._PREVIEW_MIN_INTERVAL_S:
+            return
+        self._preview_last_t = now
+        self._preview_pending = True
+        # Downscale here, on the worker thread, so the main thread only pays for
+        # the Tk blit. A 1280x720 label would also oversize the window.
+        h, w = frame.shape[:2]
+        if w > self._PREVIEW_MAX_W:
+            scale = self._PREVIEW_MAX_W / w
+            shown = cv2.resize(frame, (self._PREVIEW_MAX_W, int(h * scale)))
+        else:
+            shown = frame.copy()
+        try:
+            self.root.after(0, self._draw_live_preview, shown)
+        except Exception:  # noqa: BLE001 - root may be tearing down
+            self._preview_pending = False
+
+    def _draw_live_preview(self, frame):
+        """Main-thread half of :meth:`_post_live_preview`."""
+        try:
+            self.show_video_area()
+            self.display_frame(frame)
+        finally:
+            self._preview_pending = False
+
+    def show_video_area(self):
+        """Makes the preview/progress area visible (idempotent)."""
+        if self.progress_frame and not self.progress_frame.winfo_viewable():
+            self.progress_frame.pack(pady=5, fill="x", padx=10)
 
     def _file_processing_loop(self):
         """

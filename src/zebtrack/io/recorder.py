@@ -28,7 +28,12 @@ class Recorder:
         self.recording_start_frame = 0
 
     def start_recording(
-        self, output_folder, frame_width, frame_height, is_video_file=False
+        self,
+        output_folder,
+        frame_width,
+        frame_height,
+        is_video_file=False,
+        fps=None,
     ):
         """
         Prepares and starts a new recording session.
@@ -38,6 +43,10 @@ class Recorder:
             frame_width (int): The width of the video frames.
             frame_height (int): The height of the video frames.
             is_video_file (bool): If True, skips video file creation.
+            fps (float | None): Frame rate to stamp into the video container.
+                Pass the *measured* camera rate. Falls back to the configured
+                value, which is a request rather than an observation and on
+                this rig differs from the achieved rate by about 30%.
 
         Returns:
             bool: True if recording started successfully, False otherwise.
@@ -55,10 +64,24 @@ class Recorder:
         if not is_video_file:
             video_filename = os.path.join(output_folder, f"{self.base_name}.mp4")
             fourcc = cv2.VideoWriter_fourcc(*"mp4v")
+            # Explicit about None, but still rejecting non-positive values: a
+            # container stamped with fps=0 cannot be timed by any player, so a
+            # bad measurement has to fall back rather than pass through.
+            use_measured = fps is not None and float(fps) > 0
+            write_fps = (
+                float(fps) if use_measured else float(settings.video_processing.fps)
+            )
+            self.video_fps = write_fps
+            log_context.info(
+                "recorder.video_fps",
+                fps_used=write_fps,
+                fps_configured=settings.video_processing.fps,
+                measured=use_measured,
+            )
             self.video_writer = cv2.VideoWriter(
                 video_filename,
                 fourcc,
-                settings.video_processing.fps,
+                write_fps,
                 (frame_width, frame_height),
             )
             if not self.video_writer.isOpened():

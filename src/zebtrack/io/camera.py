@@ -6,7 +6,6 @@ import cv2
 import numpy as np
 import structlog
 
-from zebtrack import latency_logging
 from zebtrack.io.frame_source import FrameSource
 from zebtrack.settings import settings
 
@@ -27,6 +26,9 @@ class Camera(FrameSource):
 
         self.actual_width = int(self.cap.get(cv2.CAP_PROP_FRAME_WIDTH))
         self.actual_height = int(self.cap.get(cv2.CAP_PROP_FRAME_HEIGHT))
+        # Read once, here, before the reader thread exists. Querying the capture
+        # backend from another thread while it is inside cap.read() can block.
+        self._declared_fps = self.cap.get(cv2.CAP_PROP_FPS)
         log.info(
             "camera.initialized",
             index=self._camera_index,
@@ -36,6 +38,18 @@ class Camera(FrameSource):
 
         self._lock = threading.Lock()
         self._latest_frame: Tuple[bool, np.ndarray | None] = (False, None)
+        # Capture timestamp and sequence number of the frame currently held in
+        # ``_latest_frame``. These travel WITH the frame; the old module-level
+        # ``latency_logging.FRAME_T0`` global is gone (it was overwritten by
+        # this thread on every read, including frames never consumed).
+        self._latest_t0: float | None = None
+        self._latest_seq: int = 0
+        self._cam_seq: int = 0
+        # Running estimate of the achieved camera rate, used to write the video
+        # container at the true fps instead of the declared one.
+        self._fps_t_first: float | None = None
+        self._fps_t_last: float | None = None
+        self._fps_n: int = 0
         self._stopped = threading.Event()
         self._thread = threading.Thread(target=self._reader_thread, daemon=True)
         self._thread.start()
@@ -59,8 +73,14 @@ class Camera(FrameSource):
                     time.sleep(2)
                     continue
 
+            t_before = time.perf_counter()
             ret, frame = self.cap.read()
-            latency_logging.FRAME_T0 = time.perf_counter()
+            t0 = time.perf_counter()
+            # A read that takes this long is not a slow frame, it is a stalled
+            # device. Say so, instead of letting the preview silently freeze on
+            # the last good frame.
+            if t0 - t_before > 2.0:
+                log.warning("camera.read.stalled", seconds=round(t0 - t_before, 2))
 
             if not ret:
                 self.cap.release()
@@ -70,7 +90,14 @@ class Camera(FrameSource):
                 continue
 
             with self._lock:
+                self._cam_seq += 1
                 self._latest_frame = (ret, frame)
+                self._latest_t0 = t0
+                self._latest_seq = self._cam_seq
+                if self._fps_t_first is None:
+                    self._fps_t_first = t0
+                self._fps_t_last = t0
+                self._fps_n += 1
         log.info("camera.reader_thread.stopped")
 
     def get_frame(self) -> Tuple[bool, np.ndarray | None]:
@@ -81,12 +108,43 @@ class Camera(FrameSource):
             ret, frame = self._latest_frame
             return ret, frame.copy() if ret else None
 
+    def get_frame_ts(self):
+        """Like :meth:`get_frame`, but also returns the frame's own capture
+        timestamp and the camera reader's sequence number for it.
+
+        Returns ``(ret, frame, t_capture_perf, cam_seq)``. ``cam_seq`` counts
+        camera reads, so the gap between consecutive consumed values is the
+        number of camera frames skipped by the "latest frame wins" policy.
+        """
+        with self._lock:
+            ret, frame = self._latest_frame
+            t0, seq = self._latest_t0, self._latest_seq
+            return ret, (frame.copy() if ret else None), t0, seq
+
+    def measured_fps(self) -> float | None:
+        """Achieved camera rate since start-up, or None if not yet estimable.
+
+        Measured, not declared. ``settings.video_processing.fps`` is a request,
+        not an observation, and on this rig the two differ by ~30%.
+        """
+        with self._lock:
+            if self._fps_n < 2 or self._fps_t_first is None:
+                return None
+            span = self._fps_t_last - self._fps_t_first
+            return (self._fps_n - 1) / span if span > 0 else None
+
     def release(self) -> None:
         """
         Signals the reader thread to stop and releases the camera resource.
         """
         self._stopped.set()
         self._thread.join(timeout=2)
+        if self._thread.is_alive():
+            # The reader is still inside cap.read(). Calling cap.release() now
+            # would block on the same backend and hang the UI thread. The thread
+            # is a daemon and the handle is freed at process exit.
+            log.error("camera.release.reader_still_running")
+            return
         if self.cap.isOpened():
             self.cap.release()
             log.info("camera.released")
@@ -98,7 +156,10 @@ class Camera(FrameSource):
         return {
             "width": self.actual_width,
             "height": self.actual_height,
-            "fps": self.cap.get(cv2.CAP_PROP_FPS) or settings.video_processing.fps,
+            "fps": self._declared_fps or settings.video_processing.fps,
+            # Observed rate of the reader thread. Prefer this over "fps" for
+            # anything that converts frames to milliseconds.
+            "fps_measured": self.measured_fps(),
         }
 
 
