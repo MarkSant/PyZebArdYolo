@@ -17,10 +17,12 @@ except ImportError:  # Fallback lightweight logger so code still runs
     import logging as structlog  # type: ignore
     structlog.get_logger = lambda *a, **k: structlog.getLogger("zebtrack")
 
+from zebtrack import latency_logging
 from zebtrack.core.project_manager import ProjectManager
 from zebtrack.io.arduino import Arduino
 from zebtrack.io.camera import Camera
 from zebtrack.io.recorder import Recorder
+from zebtrack.settings import settings
 from zebtrack.ui.gui import ApplicationGUI
 
 log = structlog.get_logger()
@@ -34,8 +36,6 @@ class AppController:
         self.view = ApplicationGUI(root, self)
 
         # Backend modules
-        from zebtrack.settings import settings
-
         self.project_manager = ProjectManager()
         self.recorder = Recorder()
         self.arduino = Arduino(
@@ -92,27 +92,27 @@ class AppController:
             self.root.destroy()
             log.info("application.shutdown.complete")
 
+    # No join here may be unbounded. Every one of these threads can block in a
+    # third-party call (OpenCV capture, OpenVINO inference, pyserial), and an
+    # unbounded join turns one stalled worker into a frozen application with no
+    # diagnostic. All threads are daemons, so a straggler cannot keep the
+    # process alive; it only gets named in the log.
+    _JOIN_TIMEOUT_S = 5
+
     def join_threads(self):
-        """Waits for all core threads to finish."""
+        """Waits (with a bound) for all core threads to finish."""
         log.info("threads.join.start")
-        if (
-            hasattr(self, "capture_thread")
-            and self.capture_thread
-            and self.capture_thread.is_alive()
-        ):
-            self.capture_thread.join()
-        if (
-            hasattr(self, "processing_thread")
-            and self.processing_thread
-            and self.processing_thread.is_alive()
-        ):
-            self.processing_thread.join()
-        if (
-            hasattr(self, "video_thread")
-            and self.video_thread
-            and self.video_thread.is_alive()
-        ):
-            self.video_thread.join(timeout=5)
+        for name in ("capture_thread", "processing_thread", "video_thread"):
+            thread = getattr(self, name, None)
+            if not thread or not thread.is_alive():
+                continue
+            thread.join(timeout=self._JOIN_TIMEOUT_S)
+            if thread.is_alive():
+                log.error(
+                    "threads.join.timeout",
+                    thread=name,
+                    timeout_s=self._JOIN_TIMEOUT_S,
+                )
         log.info("threads.join.finished")
 
     def stop_recording(self):
@@ -125,6 +125,14 @@ class AppController:
             self.video_thread.join(timeout=5)
 
         self.recorder.stop_recording()
+        latency_logging.stop_session(
+            {
+                "fps_measured_at_stop": (
+                    self.camera.measured_fps() if self.camera is not None else None
+                ),
+                "video_fps_written": getattr(self.recorder, "video_fps", None),
+            }
+        )
 
         self.view.update_button_state("start_rec", "normal")
         self.view.update_button_state("stop_rec", "disabled")
@@ -201,11 +209,44 @@ class AppController:
         )
 
         cam_props = self.camera.get_properties()
+        # Stamp the container with the rate the camera actually achieves. The
+        # configured value is a request; on this rig the two differ by ~30%,
+        # which would make every frame->millisecond conversion wrong.
+        measured_fps = cam_props.get("fps_measured")
         success = self.recorder.start_recording(
-            output_folder, cam_props["width"], cam_props["height"]
+            output_folder,
+            cam_props["width"],
+            cam_props["height"],
+            fps=measured_fps,
         )
 
         if success:
+            latency_logging.start_session(
+                output_folder,
+                os.path.basename(output_folder),
+                meta={
+                    "system": "PyZebArdYolo",
+                    "session_id": os.path.basename(output_folder),
+                    "camera_index": settings.camera.index,
+                    "frame_width": cam_props["width"],
+                    "frame_height": cam_props["height"],
+                    "fps_configured": settings.video_processing.fps,
+                    "fps_measured_at_start": measured_fps,
+                    # Live mode analyses every queued frame; the configured
+                    # processing_interval applies only to pre-recorded video.
+                    "analysis_interval_frames": 1,
+                    "arduino_port": settings.arduino.port,
+                    "baud_rate": settings.arduino.baud_rate,
+                    "detector_plugin": type(self.detector.plugin).__name__
+                    if self.detector is not None
+                    else None,
+                    "confidence_threshold": settings.yolo_model.confidence_threshold,
+                    "detection_squares": settings.detection_zones.squares,
+                    "enter_commands": settings.detection_zones.enter_commands,
+                    "exit_commands": settings.detection_zones.exit_commands,
+                    "roi_convention": "bbox_corner",
+                },
+            )
             with self.frame_queue.mutex:
                 self.frame_queue.queue.clear()
             with self.video_queue.mutex:
