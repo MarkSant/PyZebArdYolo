@@ -64,13 +64,19 @@ class Recorder:
         if not is_video_file:
             video_filename = os.path.join(output_folder, f"{self.base_name}.mp4")
             fourcc = cv2.VideoWriter_fourcc(*"mp4v")
-            write_fps = float(fps) if fps else float(settings.video_processing.fps)
+            # Explicit about None, but still rejecting non-positive values: a
+            # container stamped with fps=0 cannot be timed by any player, so a
+            # bad measurement has to fall back rather than pass through.
+            use_measured = fps is not None and float(fps) > 0
+            write_fps = (
+                float(fps) if use_measured else float(settings.video_processing.fps)
+            )
             self.video_fps = write_fps
             log_context.info(
                 "recorder.video_fps",
                 fps_used=write_fps,
                 fps_configured=settings.video_processing.fps,
-                measured=bool(fps),
+                measured=use_measured,
             )
             self.video_writer = cv2.VideoWriter(
                 video_filename,

@@ -58,6 +58,11 @@ _TRIG_COLUMNS = [
 _LEDGER_COLUMNS = ["video_write_index", "frame", "cam_seq", "t_capture_perf"]
 
 
+def _fmt(value, decimals=6):
+    """Format an optional float for CSV: empty cell for None, never for 0.0."""
+    return "" if value is None else f"{value:.{decimals}f}"
+
+
 class _Session:
     """Holds the open file handles and counters for one recording session."""
 
@@ -69,6 +74,7 @@ class _Session:
         self.video_write_index = 0
         self.video_drops = 0
         self.analysis_drops = 0
+        self.trigger_drops = 0
         self.t_first_capture = None
         self.t_last_capture = None
         self.n_captures = 0
@@ -116,34 +122,43 @@ def start_session(folder, base_name, meta=None):
 
 
 def stop_session(extra_meta=None):
-    """Flush and close the session, writing the metadata sidecar."""
+    """Flush and close the session, writing the metadata sidecar.
+
+    Teardown happens entirely under ``_LOCK``. Clearing ``_SESSION`` first and
+    closing the handles afterwards would let a logging call that had already
+    read the old handle write to a closed file, and would snapshot the counters
+    while a worker was still incrementing them. Every logger below therefore
+    reads ``_SESSION`` under the same lock, so each call either completes
+    against a live session or sees None and skips.
+    """
     global _SESSION
     with _LOCK:
         s = _SESSION
         _SESSION = None
-    if s is None:
-        return
-    meta = dict(s.meta)
-    meta.update(extra_meta or {})
-    meta.update(
-        {
-            "n_triggers": s.event_id,
-            "n_video_frames_written": s.video_write_index,
-            "video_queue_drops": s.video_drops,
-            "analysis_queue_drops": s.analysis_drops,
-            "n_captures_consumed": s.n_captures,
-            "fps_measured": measured_fps_from(s),
-            "t_first_capture_perf": s.t_first_capture,
-            "t_last_capture_perf": s.t_last_capture,
-        }
-    )
-    try:
-        path = os.path.join(s.folder, f"8_LatencyMeta_{s.base_name}.json")
-        with open(path, "w", encoding="utf-8") as fh:
-            json.dump(meta, fh, indent=1, default=str)
-    except Exception:
-        pass
-    s.close()
+        if s is None:
+            return
+        meta = dict(s.meta)
+        meta.update(extra_meta or {})
+        meta.update(
+            {
+                "n_triggers": s.event_id,
+                "n_video_frames_written": s.video_write_index,
+                "video_queue_drops": s.video_drops,
+                "analysis_queue_drops": s.analysis_drops,
+                "trigger_queue_drops": s.trigger_drops,
+                "n_captures_consumed": s.n_captures,
+                "fps_measured": measured_fps_from(s),
+                "t_first_capture_perf": s.t_first_capture,
+                "t_last_capture_perf": s.t_last_capture,
+            }
+        )
+        try:
+            path = os.path.join(s.folder, f"8_LatencyMeta_{s.base_name}.json")
+            with open(path, "w", encoding="utf-8") as fh:
+                json.dump(meta, fh, indent=1, default=str)
+        except Exception:
+            pass
+        s.close()
 
 
 def measured_fps_from(s):
@@ -158,10 +173,10 @@ def measured_fps_from(s):
 
 def note_capture(t_capture):
     """Record a consumed frame's capture timestamp (for the fps estimate)."""
-    s = _SESSION
-    if s is None:
-        return
     with _LOCK:
+        s = _SESSION
+        if s is None:
+            return
         if s.t_first_capture is None:
             s.t_first_capture = t_capture
         s.t_last_capture = t_capture
@@ -169,13 +184,15 @@ def note_capture(t_capture):
 
 
 def note_drop(kind):
-    """Count a dropped frame. kind is 'video' or 'analysis'."""
-    s = _SESSION
-    if s is None:
-        return
+    """Count a dropped frame. kind is 'video', 'analysis' or 'trigger'."""
     with _LOCK:
+        s = _SESSION
+        if s is None:
+            return
         if kind == "video":
             s.video_drops += 1
+        elif kind == "trigger":
+            s.trigger_drops += 1
         else:
             s.analysis_drops += 1
 
@@ -186,14 +203,14 @@ def log_video_frame(frame, cam_seq, t_capture):
     Returns the 0-based index this frame will occupy in the mp4, which is what
     makes the video<->pipeline mapping exact.
     """
-    s = _SESSION
-    if s is None:
-        return None
     try:
         with _LOCK:
+            s = _SESSION
+            if s is None:
+                return None
             idx = s.video_write_index
             s.video_write_index += 1
-            s._lw.writerow([idx, frame, cam_seq, f"{t_capture:.6f}"])
+            s._lw.writerow([idx, frame, cam_seq, _fmt(t_capture)])
             s._lf.flush()
         return idx
     except Exception:
@@ -219,18 +236,43 @@ def log_trigger(
     ``frame_t0`` must be the capture timestamp of the frame that produced this
     decision, passed explicitly by the caller. The old module-level global is
     no longer consulted.
+
+    ``t_ack`` may be None for a trigger that never got as far as a reply (a
+    write timeout, say). The row is still written, with the acknowledgement
+    columns empty and ``ack_ok`` false, because a trigger the firmware may
+    never have acted on is a data point, not an absence of one.
+
+    All timestamps are tested against None rather than for truthiness:
+    perf_counter's epoch is arbitrary, so 0.0 is a legal reading, and treating
+    it as "missing" would silently blank a latency column.
     """
-    s = _SESSION
-    if s is None:
-        return
     try:
         with _LOCK:
+            s = _SESSION
+            if s is None:
+                return
             s.event_id += 1
             eid = s.event_id
-            serial_ms = (t_ack - t_send) * 1000.0
-            f2a = (t_ack - frame_t0) * 1000.0 if frame_t0 else ""
-            c2d = (t_decision - frame_t0) * 1000.0 if (t_decision and frame_t0) else ""
-            d2s = (t_send - t_decision) * 1000.0 if t_decision else ""
+            serial_ms = (
+                (t_ack - t_send) * 1000.0
+                if (t_ack is not None and t_send is not None)
+                else None
+            )
+            f2a = (
+                (t_ack - frame_t0) * 1000.0
+                if (t_ack is not None and frame_t0 is not None)
+                else None
+            )
+            c2d = (
+                (t_decision - frame_t0) * 1000.0
+                if (t_decision is not None and frame_t0 is not None)
+                else None
+            )
+            d2s = (
+                (t_send - t_decision) * 1000.0
+                if (t_send is not None and t_decision is not None)
+                else None
+            )
             s._tw.writerow(
                 [
                     eid,
@@ -240,16 +282,16 @@ def log_trigger(
                     "" if roi is None else roi,
                     "" if edge is None else edge,
                     cmd,
-                    f"{frame_t0:.6f}" if frame_t0 else "",
-                    f"{t_decision:.6f}" if t_decision else "",
-                    f"{t_send:.6f}",
-                    f"{t_ack:.6f}",
+                    _fmt(frame_t0),
+                    _fmt(t_decision),
+                    _fmt(t_send),
+                    _fmt(t_ack),
                     "" if ack_ok is None else bool(ack_ok),
                     ack_text,
-                    f"{c2d:.3f}" if c2d != "" else "",
-                    f"{d2s:.3f}" if d2s != "" else "",
-                    f"{serial_ms:.3f}",
-                    f"{f2a:.3f}" if f2a != "" else "",
+                    _fmt(c2d, 3),
+                    _fmt(d2s, 3),
+                    _fmt(serial_ms, 3),
+                    _fmt(f2a, 3),
                 ]
             )
             s._tf.flush()

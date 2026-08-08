@@ -190,3 +190,88 @@ def test_session_files_land_in_the_recording_folder(tmp_path):
     for name in ("6_Latency_Grupo_1.csv", "7_FrameLedger_Grupo_1.csv",
                  "8_LatencyMeta_Grupo_1.json"):
         assert os.path.exists(folder / name)
+
+
+# --- Review follow-ups (PR #21) -------------------------------------------
+
+
+def test_zero_is_a_legal_timestamp_not_a_missing_one(tmp_path):
+    """perf_counter's epoch is arbitrary, so 0.0 is a reading, not an absence.
+
+    Truthiness checks blanked the latency columns for it, which corrupts the
+    measurement silently -- the failure mode this whole module exists to stop.
+    """
+    latency_logging.start_session(str(tmp_path), "unit")
+    latency_logging.log_trigger(
+        1, 0.0, 0.5, 0.0, ack_ok=True, ack_text="Red LED 1 ON", t_decision=0.0
+    )
+    latency_logging.stop_session()
+    row = next(csv.DictReader(open(tmp_path / "6_Latency_unit.csv", encoding="utf-8")))
+    assert row["t_capture_perf"] == "0.000000"
+    assert row["t_decision_perf"] == "0.000000"
+    assert row["t_send_perf"] == "0.000000"
+    assert float(row["frame_to_ack_ms"]) == pytest.approx(500.0)
+    assert float(row["capture_to_decision_ms"]) == pytest.approx(0.0)
+
+
+def test_a_trigger_with_no_ack_still_produces_a_row(tmp_path):
+    """A write timeout is a data point: the stimulus may never have fired."""
+    latency_logging.start_session(str(tmp_path), "unit")
+    latency_logging.log_trigger(
+        7, 1.0, None, 0.5, ack_ok=False, ack_text="WRITE_TIMEOUT", roi=4, edge="enter"
+    )
+    latency_logging.stop_session()
+    row = next(csv.DictReader(open(tmp_path / "6_Latency_unit.csv", encoding="utf-8")))
+    assert row["ack_text"] == "WRITE_TIMEOUT"
+    assert row["ack_ok"] == "False"
+    assert row["t_ack_perf"] == ""
+    assert row["serial_act_ms"] == ""
+    assert row["frame_to_ack_ms"] == ""
+    # It still counts as an attempted trigger.
+    meta = json.load(open(tmp_path / "8_LatencyMeta_unit.json", encoding="utf-8"))
+    assert meta["n_triggers"] == 1
+
+
+def test_stop_session_does_not_race_concurrent_logging(tmp_path):
+    """stop_session must quiesce logging, not close files under a live writer.
+
+    Reading _SESSION outside the lock let a call that had already taken the
+    handle write to a closed file after teardown.
+    """
+    import threading
+
+    latency_logging.start_session(str(tmp_path), "unit")
+    stop = threading.Event()
+    errors = []
+
+    def hammer():
+        while not stop.is_set():
+            try:
+                latency_logging.note_capture(time.perf_counter())
+                latency_logging.log_video_frame(1, 1, time.perf_counter())
+                latency_logging.log_trigger(1, 0.0, 0.1, 0.0)
+            except Exception as exc:  # noqa: BLE001
+                errors.append(exc)
+                return
+
+    workers = [threading.Thread(target=hammer) for _ in range(4)]
+    for w in workers:
+        w.start()
+    time.sleep(0.2)
+    latency_logging.stop_session()
+    stop.set()
+    for w in workers:
+        w.join(timeout=2)
+
+    assert not errors
+    # The sidecar must exist and its counters must be internally consistent
+    # with the rows that were actually written.
+    meta = json.load(open(tmp_path / "8_LatencyMeta_unit.json", encoding="utf-8"))
+    ledger = list(
+        csv.DictReader(open(tmp_path / "7_FrameLedger_unit.csv", encoding="utf-8"))
+    )
+    triggers = list(
+        csv.DictReader(open(tmp_path / "6_Latency_unit.csv", encoding="utf-8"))
+    )
+    assert meta["n_video_frames_written"] == len(ledger)
+    assert meta["n_triggers"] == len(triggers)

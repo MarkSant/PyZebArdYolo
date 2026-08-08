@@ -127,7 +127,10 @@ class Arduino:
             self._tx_queue.put_nowait((box_number, kwargs))
             return True
         except queue.Full:
+            # Counted in 8_LatencyMeta as trigger_queue_drops. A stimulus the
+            # port was too slow to accept must not vanish from the record.
             log.error("arduino.command.dropped_queue_full", command=box_number)
+            latency_logging.note_drop("trigger")
             return False
 
     def stop_dispatcher(self, timeout: float = 1.0) -> None:
@@ -169,6 +172,9 @@ class Arduino:
 
         if self.ser and self.ser.is_open:
             command = f"{command_num}\n"
+            # Bound before the try: the timeout handler below reports it, and
+            # the drain could in principle raise before it is assigned.
+            t_send = None
             try:
                 # Drain BEFORE the write. Draining after the read (as this code
                 # previously did) means the next readline returns the ACK of the
@@ -181,8 +187,25 @@ class Arduino:
                 log.info("arduino.command.sent", command=command_num)
             except serial.SerialTimeoutException:
                 # The write did not complete within write_timeout. Report the
-                # trigger as lost rather than waiting on the driver.
+                # trigger as lost rather than waiting on the driver -- but still
+                # record the row. A trigger the firmware may never have acted on
+                # has to stay visible in 6_Latency_<base>.csv and in n_triggers,
+                # otherwise the lost stimulus is indistinguishable from one that
+                # was never attempted.
                 log.error("arduino.command.write_timeout", command=command_num)
+                latency_logging.log_trigger(
+                    command_num,
+                    t_send,
+                    None,
+                    frame_t0,
+                    ack_ok=False,
+                    ack_text="WRITE_TIMEOUT",
+                    frame=frame,
+                    cam_seq=cam_seq,
+                    roi=roi,
+                    edge=edge,
+                    t_decision=t_decision,
+                )
                 return False
             except serial.SerialException as e:
                 log.error("arduino.command.send_error", exc_info=e)
