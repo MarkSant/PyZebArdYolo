@@ -51,6 +51,46 @@ poetry run python -m zebtrack
 
 This will launch the main graphical user interface.
 
+## Configuration
+
+`config.yaml` holds the versioned defaults. Settings that belong to one
+bench rather than to the project — camera index, Arduino serial port —
+should go in **`config.local.yaml`**, which is merged on top of
+`config.yaml` at load time and is not tracked by git. Only the keys you
+override need to be present:
+
+```yaml
+camera:
+  index: 1
+arduino:
+  port: 'COM3'
+```
+
+This keeps the serial port from being committed and re-committed every
+time the hardware moves between machines.
+
+## Output files
+
+Each live recording session writes into its own folder, named
+`<group>_<subject>` inside the project directory:
+
+| File | Contents |
+| --- | --- |
+| `<base>.mp4` | Recorded video, stamped with the **measured** camera rate |
+| `1_ProcessingArea_<base>.csv` | The processing polygon, as used for this session |
+| `2_AreasOfInterest_<base>.csv` | The ROI rectangles, as used for this session |
+| `3_CoordMovimento_<base>.csv` | Detected bounding boxes per frame |
+| `6_Latency_<base>.csv` | One row per Arduino trigger: capture, decision, send and ACK timestamps, plus the derived latency legs |
+| `7_FrameLedger_<base>.csv` | One row per frame handed to the video writer, making the video-to-pipeline frame mapping exact |
+| `8_LatencyMeta_<base>.json` | Session metadata: measured fps, trigger and drop counts, detector and ROI configuration |
+
+> **Latency data recorded before v1.2.0 is not valid.** The timing columns
+> written by earlier versions were an instrumentation artefact — the serial
+> acknowledgement was read one command late and the end-to-end timestamp
+> referred to the wrong frame. Optical validation showed the resulting log
+> understating real latency by 2.8x. Sessions recorded before v1.2.0 should
+> be re-measured, not reanalysed.
+
 ## Architecture
 
 The application is designed with a separation of concerns, loosely following a Model-View-Controller (MVC) pattern.

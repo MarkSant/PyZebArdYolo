@@ -123,3 +123,7 @@ venv.bak/
 
 # keep the published trained weights (design file for the paper)
 !best12.pt
+
+# Bench-local configuration overrides (camera index, serial port).
+# Merged on top of config.yaml at load time; see README "Configuration".
+config.local.yaml

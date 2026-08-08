@@ -1,6 +1,6 @@
 [tool.poetry]
 name = "zebtrack-controller"
-version = "0.1.0"
+version = "1.2.0"
 description = "PyZebArdYolo: real-time YOLO11 detection and position-contingent visual stimulation acquisition unit for adult zebrafish (Danio rerio)."
 authors = [
     "Marco Antônio Sant'Ana Camargos <marco.sant@unesp.br>",
