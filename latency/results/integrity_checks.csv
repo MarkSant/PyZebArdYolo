@@ -1,0 +1,21 @@
+check,value
+max |derived - logged| over the four legs (ms),0.0010000008920343362
+max |sum of legs - end-to-end| (ms),0.0010000000000118803
+triggers with non-empty acknowledgment,368/368
+serial legs < 1 ms (sub-millisecond mode),0
+"Spearman rho, serial leg vs end-to-end",0.135 (p=0.0096)
+lat1_1: frame ledger contiguous (video_write_index steps of 1),True
+"lat1_1: capture loop rate (Hz, metadata)",38.78
+lat1_1: camera delivery rate (unique cam_seq / s),28.84
+lat1_1: duplicate frames in ledger (%),25.6
+lat1_1: video queue drops,0
+lat1_1: analysis queue drops,29
+lat1_1: analysis queue drops (% of captures),0.132
+lat1_2: frame ledger contiguous (video_write_index steps of 1),True
+"lat1_2: capture loop rate (Hz, metadata)",38.64
+lat1_2: camera delivery rate (unique cam_seq / s),28.83
+lat1_2: duplicate frames in ledger (%),25.4
+lat1_2: video queue drops,0
+lat1_2: analysis queue drops,32
+lat1_2: analysis queue drops (% of captures),0.133
+"analysis queue drops, both sessions (% of captures)",0.133

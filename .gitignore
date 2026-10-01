@@ -127,3 +127,9 @@ venv.bak/
 # Bench-local configuration overrides (camera index, serial port).
 # Merged on top of config.yaml at load time; see README "Configuration".
 config.local.yaml
+
+# Session videos (hundreds of MB each): archived on Zenodo, not in git
+*.mp4
+
+# FUSE / editor leftovers
+.fuse_hidden*

@@ -19,13 +19,10 @@ Conventions (fixed):
     - Pairing: nearest frame within <= 15 frames; unpaired frames = recall miss
     - Recall (missing frames) and localisation (ICC/BA) are computed SEPARATELY
 
-Note: the DRerio LogAI tracker is a separate platform, validated in its own
-repository; it is intentionally not part of this deposit.
-
 Inputs : ../data/{Manual_GroundTruth, PyZebArdYolo_tracks, ZebTrack_raw, Observer_2}
 Outputs: paired_coords/  results/  figures/   (next to this script)
 
-Dependencies: pandas, numpy, pingouin (>=0.5), matplotlib
+Dependencies: pandas, numpy, scipy, statsmodels, matplotlib (ICC/CI via agreement_stats.py)
 Author: Marco Antonio Sant'Ana Camargos - FAPESP 2023/14200-3
 """
 
@@ -39,12 +36,7 @@ import matplotlib.pyplot as plt
 
 warnings.filterwarnings("ignore")
 
-try:
-    import pingouin as pg
-except ImportError:
-    import subprocess, sys
-    subprocess.run([sys.executable, "-m", "pip", "install", "pingouin", "-q"], check=True)
-    import pingouin as pg
+from agreement_stats import icc_a1
 
 # ── Paths (relative to this script) ─────────────────────────────────────────
 HERE = Path(__file__).resolve().parent
@@ -112,22 +104,10 @@ def pair(manual, method, tol=TOL_FRAMES):
 
 # ── ICC(2,1) absolute agreement ─────────────────────────────────────────────
 def icc21(pairs, axis):
-    empty = {"icc": np.nan, "ci_lo": np.nan, "ci_hi": np.nan, "p": np.nan}
-    if len(pairs) < 3:
-        return empty
+    """ICC(A,1) with the exact McGraw & Wong 95% CI (rows with NaN are dropped)."""
     man = "x_man" if axis == "x" else "y_man"; met = "x_met" if axis == "x" else "y_met"
-    n = len(pairs)
-    long = pd.DataFrame({"subject": list(range(n)) * 2, "rater": ["manual"] * n + ["method"] * n,
-                         "rating": pairs[man].tolist() + pairs[met].tolist()})
-    try:
-        res = pg.intraclass_corr(data=long, targets="subject", raters="rater", ratings="rating")
-        mask = res["Type"].isin(["ICC(A,1)", "ICC2"])
-        if not mask.any():
-            return empty
-        row = res[mask].iloc[0]; ci = row["CI95"] if "CI95" in res.columns else row["CI95%"]
-        return {"icc": float(row["ICC"]), "ci_lo": float(ci[0]), "ci_hi": float(ci[1]), "p": float(row["pval"])}
-    except Exception as e:
-        print(f"    [ICC error] {e}"); return empty
+    r = icc_a1(pairs[[man, met]].to_numpy(float))
+    return {"icc": r["icc"], "ci_lo": r["ci_lo"], "ci_hi": r["ci_hi"]}
 
 # ── Bland-Altman stats ──────────────────────────────────────────────────────
 def ba_stats(pairs, axis):
@@ -175,7 +155,7 @@ for name, lst in all_pairs.items():
         df = pd.concat(lst, ignore_index=True)
         df.to_csv(HERE / "paired_coords" / f"pares_{name}.csv", index=False, float_format="%.4f")
 dfm = pd.DataFrame(metrics)
-dfm.to_csv(HERE / "results" / "metrics_per_video.csv", index=False, float_format="%.4f")
+dfm.to_csv(HERE / "results" / "metrics_per_video.csv", index=False, float_format="%.6f")
 dfm[["video_id", "grupo", "dia", "metodo", "n_manual", "n_pares", "n_sem_par", "recall_pct"]].to_csv(
     HERE / "results" / "recall.csv", index=False, float_format="%.2f")
 
@@ -221,4 +201,4 @@ for m in ("PyZebArdYolo", "ZebTrack", "Observer_2"):
     if s.empty: continue
     print(f"{m:<14}{s['recall_pct'].mean():>8.1f}{s['icc_x'].mean():>9.4f}{s['icc_y'].mean():>9.4f}"
           f"{s['radial_mediana'].mean():>9.1f}{s['radial_p95'].mean():>9.1f}{s['bias_x'].mean():>+8.2f}{s['bias_y'].mean():>+8.2f}")
-print("\nNext: run 02_mixed_model.R (from this directory) for the mixed-effects models.")
+print("\nNext: 02_mixed_model.R (mixed models), 03_agreement_summary.py (Tables 1-2), 04_figures.py (Figs 6-8).")

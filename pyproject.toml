@@ -1,6 +1,6 @@
 [tool.poetry]
 name = "zebtrack-controller"
-version = "1.2.0"
+version = "1.3.0"
 description = "PyZebArdYolo: real-time YOLO11 detection and position-contingent visual stimulation acquisition unit for adult zebrafish (Danio rerio)."
 authors = [
     "Marco Antônio Sant'Ana Camargos <marco.sant@unesp.br>",
@@ -34,7 +34,7 @@ build-backend = "poetry.core.masonry.api"
 line-length = 88
 # The validation deposit is standalone data-analysis code, not part of the
 # shipped package; keep it out of the package lint/CI gate.
-extend-exclude = ["validation"]
+extend-exclude = ["validation", "latency"]
 
 [tool.ruff.lint]
 select = ["E", "F", "I", "W"]

@@ -1,0 +1,4 @@
+metodo,radial_med_px,radial_med_mm,pct_within_20px,pct_within_30px,threshold_20px_in_mm,threshold_30px_in_mm
+PyZebArdYolo,9.9296,8.0077,80.6028,92.4648,16.1290,24.1935
+ZebTrack,43.9437,35.4385,19.2143,30.7619,16.1290,24.1935
+Observer_2,5.7834,4.6640,95.7918,97.6744,16.1290,24.1935

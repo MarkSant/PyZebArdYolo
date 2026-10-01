@@ -1,0 +1,6 @@
+statistic,value
+triggers,261
+span of triggers (min),9.3
+median inter-trigger interval (ms),50.2
+consecutive triggers < 200 ms apart (%),69.6
+triggers on the most frequent zone,204 (zone 1)

@@ -1,6 +1,6 @@
 # PyZebArdYolo
 
-[![DOI](https://zenodo.org/badge/DOI/10.5281/zenodo.21386270.svg)](https://doi.org/10.5281/zenodo.21386270)
+[![DOI](https://zenodo.org/badge/DOI/10.5281/zenodo.21386269.svg)](https://doi.org/10.5281/zenodo.21386269)
 
 PyZebArdYolo is a real-time acquisition unit for behavioral neuroscience: a
 graphical application that couples a consumer webcam to YOLO11-based object
@@ -149,12 +149,16 @@ hardware paper:
 *   **`config.yaml`** — camera, Arduino, detector and ROI configuration.
 *   **`validation/`** — the tracking-fidelity validation dataset and analysis
     (raw annotations, paired coordinates, metrics, figures and the analysis
-    scripts). See [`validation/README.md`](validation/README.md). Scope: the
-    PyZebArdYolo apparatus only; the *DRerio LogAI* platform is validated
-    separately in its own repository.
-*   **`hardware/`** — hardware design files for the custom acrylic arena
-    (CAD). *(To be added: STL mesh and the editable source; a dimensioned
-    drawing is in the paper.)*
+    scripts). See [`validation/README.md`](validation/README.md).
+*   **`latency/`** — closed-loop latency logs of two live sessions, the optical
+    read-out script, the summary script that produces every latency value of
+    the paper, and Figure 9. See [`latency/README.md`](latency/README.md).
+*   **`hardware/`** — design files: acrylic arena (SketchUp source `arena.skp`,
+    STL mesh, dimensioned drawings), block schematic and electronic diagram
+    (`hardware/schematics/`), and the machine-readable bill of materials
+    (`hardware/bill_of_materials.csv`).
+*   **`LICENSES/`** — full texts of every license used in the repository
+    (MIT, AGPL-3.0, CERN-OHL-S-2.0, CC-BY-4.0).
 
 ## Authors
 
@@ -174,6 +178,6 @@ the **combined, distributed application** bundles Ultralytics YOLO
 attribution requirements (CC BY 4.0), and hardware design files are
 CERN-OHL-S v2.
 
-See [`LICENSE`](LICENSE) for the MIT text and [`NOTICE`](NOTICE) for the
-full breakdown (third-party licenses, dataset attribution, and what
+See [`LICENSE`](LICENSE) for the MIT text, [`LICENSES/`](LICENSES/) for the
+full text of every license, and [`NOTICE`](NOTICE) for the full breakdown (third-party licenses, dataset attribution, and what
 "effective AGPL-3.0" means for redistribution).

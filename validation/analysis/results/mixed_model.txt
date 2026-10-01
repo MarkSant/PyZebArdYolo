@@ -1,8 +1,8 @@
 MIXED-EFFECTS MODELS — PyZebArdYolo validation
-Run: 2026-07-15 17:30:10.270308 | R version 4.5.3 (2026-03-11 ucrt)
+Run: 2026-10-01 19:53:52.499226 | R version 4.5.3 (2026-03-11 ucrt)
 
 ======================================================================
-METHOD: PyZebArdYolo  (N pairs = 4115, videos = 14)
+METHOD: PyZebArdYolo  (N pairs = 4114, videos = 14)
 ======================================================================
 
 --- x_diff ~ 1 + (1|video_id) ---
@@ -20,7 +20,7 @@ METHOD: PyZebArdYolo  (N pairs = 4115, videos = 14)
   weighted ICC_X = 0.9974 | ICC_Y = 0.9856 | median radial = 10.9 px
 
 ======================================================================
-METHOD: ZebTrack  (N pairs = 4201, videos = 14)
+METHOD: ZebTrack  (N pairs = 4200, videos = 14)
 ======================================================================
 
 --- x_diff ~ 1 + (1|video_id) ---

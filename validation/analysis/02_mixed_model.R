@@ -6,8 +6,7 @@
 #   - per-video ICC(2,1) absolute agreement via psych::ICC()
 #   - method comparison: radial ~ method + (1 | video_id), ref = PyZebArdYolo
 #
-# P1 scope: PyZebArdYolo, ZebTrack (raw), Observer_2. The DRerio LogAI tracker
-# is validated separately in its own repository and is not part of this deposit.
+# Methods: PyZebArdYolo, ZebTrack (raw), Observer_2.
 #
 # Run from this directory:  Rscript 02_mixed_model.R
 # Requires: lme4, psych  (base R for everything else)

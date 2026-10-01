@@ -1,7 +1,7 @@
 cff-version: 1.2.0
 message: "If you use this software, please cite both the software and the accompanying paper."
 title: "PyZebArdYolo"
-abstract: "Open-source, low-cost acquisition unit for real-time YOLO11 detection and position-contingent visual stimulation of adult zebrafish (Danio rerio). Couples a consumer webcam to an Arduino Uno R3 and runs offline on a standard laptop (Intel OpenVINO, no dedicated GPU)."
+abstract: "Open-source, low-cost acquisition unit for real-time YOLO11 detection and position-contingent visual stimulation of adult zebrafish (Danio rerio). Couples a consumer webcam to an Arduino Uno R3 and runs locally, without internet, on a standard laptop (Intel OpenVINO, no dedicated GPU)."
 type: software
 authors:
   - family-names: "Sant'Ana Camargos"
@@ -14,13 +14,13 @@ authors:
     affiliation: "São Paulo State University (UNESP), Botucatu, Brazil"
     email: "percilia.giaquinto@unesp.br"
     orcid: "https://orcid.org/0000-0003-4591-4415"
-version: "1.2.0"
-date-released: "2026-08-08"
+version: "1.3.0"
+date-released: "2026-10-01"   # update to the release date
 license: AGPL-3.0-only        # effective license of the distributed work (bundles Ultralytics YOLO, AGPL-3.0); authors' own code is MIT — see NOTICE
 license-url: "https://www.gnu.org/licenses/agpl-3.0.html"
 repository-code: "https://github.com/MarkSant/PyZebArdYolo"
 url: "https://github.com/MarkSant/PyZebArdYolo"
-doi: "10.5281/zenodo.21386270"
+doi: "10.5281/zenodo.21386269"   # concept DOI (all versions)
 keywords:
   - zebrafish
   - behavioural neuroscience
@@ -32,14 +32,20 @@ keywords:
   - OpenVINO
 preferred-citation:
   type: article
-  title: "An open-source, low-cost system for real-time YOLO11 detection and position-contingent visual stimulation of adult zebrafish (PyZebArdYolo acquisition unit)"
+  title: "An Open-Source, Low-Cost System for Real-Time Tracking and Closed-Loop Stimulation of Adult Zebrafish"
   authors:
     - family-names: "Sant'Ana Camargos"
       given-names: "Marco Antônio"
       affiliation: "São Paulo State University (UNESP), Botucatu, Brazil"
+      orcid: "https://orcid.org/0009-0000-0014-1485"
+    - family-names: "Venâncio da Silva"
+      given-names: "Gustavo"
+      affiliation: "São Paulo State University (UNESP), Botucatu, Brazil"   # confirm
     - family-names: "Giaquinto"
       given-names: "Percília Cardoso"
       affiliation: "São Paulo State University (UNESP), Botucatu, Brazil"
-  journal: "HardwareX"
-  year: 2026          # UPDATE on acceptance
-  # doi: "10.1016/j.ohx.XXXX.eXXXXX"   # add the article DOI when available
+      orcid: "https://orcid.org/0000-0003-4591-4415"
+  journal: "Journal of Neuroscience Methods"
+  status: submitted
+  year: 2026          # update on acceptance
+  # doi: "10.1016/j.jneumeth.XXXX.XXXXXX"   # add the article DOI when available

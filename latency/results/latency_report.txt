@@ -1,0 +1,52 @@
+=== Software log ===
+pooled  end-to-end (capture -> acknowledgment)   n=368 median 53.64 ms [IQR 45.5-60.3]
+pooled  capture -> decision                      n=368 median 34.00 ms [IQR 25.6-41.0]
+pooled  decision -> serial send                  n=368 median 0.25 ms [IQR 0.2-0.3]
+pooled  serial transmission + actuation          n=368 median 19.50 ms [IQR 18.5-20.4]
+lat1_1  end-to-end (capture -> acknowledgment)   n=261 median 53.27 ms [IQR 43.9-60.3]
+lat1_1  capture -> decision                      n=261 median 33.69 ms [IQR 24.9-40.9]
+lat1_1  decision -> serial send                  n=261 median 0.25 ms [IQR 0.2-0.3]
+lat1_1  serial transmission + actuation          n=261 median 19.43 ms [IQR 18.3-20.4]
+lat1_2  end-to-end (capture -> acknowledgment)   n=107 median 54.80 ms [IQR 48.0-61.7]
+lat1_2  capture -> decision                      n=107 median 34.66 ms [IQR 28.2-41.5]
+lat1_2  decision -> serial send                  n=107 median 0.26 ms [IQR 0.2-0.3]
+lat1_2  serial transmission + actuation          n=107 median 19.73 ms [IQR 18.9-20.6]
+
+=== Integrity checks ===
+max |derived - logged| over the four legs (ms): 0.0010000008920343362
+max |sum of legs - end-to-end| (ms): 0.0010000000000118803
+triggers with non-empty acknowledgment: 368/368
+serial legs < 1 ms (sub-millisecond mode): 0
+Spearman rho, serial leg vs end-to-end: 0.135 (p=0.0096)
+lat1_1: frame ledger contiguous (video_write_index steps of 1): True
+lat1_1: capture loop rate (Hz, metadata): 38.78
+lat1_1: camera delivery rate (unique cam_seq / s): 28.84
+lat1_1: duplicate frames in ledger (%): 25.6
+lat1_1: video queue drops: 0
+lat1_1: analysis queue drops: 29
+lat1_1: analysis queue drops (% of captures): 0.132
+lat1_2: frame ledger contiguous (video_write_index steps of 1): True
+lat1_2: capture loop rate (Hz, metadata): 38.64
+lat1_2: camera delivery rate (unique cam_seq / s): 28.83
+lat1_2: duplicate frames in ledger (%): 25.4
+lat1_2: video queue drops: 0
+lat1_2: analysis queue drops: 32
+lat1_2: analysis queue drops (% of captures): 0.133
+analysis queue drops, both sessions (% of captures): 0.133
+
+=== Optical read-out (isolated transitions) ===
+pooled  n=36 decision->LED median 95.3 ms | logged 55.2 | D 36.4 | D 95% CI 31.9-42.8 | paired Wilcoxon p = 2.9e-11
+lat1_1  n=24 decision->LED median 95.3 ms | logged 55.1 | D 41.2
+lat1_2  n=12 decision->LED median 88.0 ms | logged 57.9 | D 31.1
+
+=== Animal-referenced latency (boundary crossing -> visible cue) ===
+lat1_1  cadence 25.8 ms | sampling phase 12.9 | optical 95.3 | total median 107.3 ms (p95 138.4)
+lat1_2  cadence 25.9 ms | sampling phase 12.9 | optical 88.0 | total median 100.4 ms (p95 132.8)
+pooled  cadence 25.8 ms | sampling phase 12.9 | optical 95.3 | total median 104.0 ms (p95 135.9)
+
+=== Boundary chatter, session lat1_1 ===
+triggers: 261
+span of triggers (min): 9.3
+median inter-trigger interval (ms): 50.2
+consecutive triggers < 200 ms apart (%): 69.6
+triggers on the most frequent zone: 204 (zone 1)

@@ -1,0 +1,4 @@
+scope,n,optical_median,logged_median,D_median,D_ci_lo,D_ci_hi,wilcoxon_p
+pooled,36,95.3005,55.206,36.409,31.857,42.841,2.91038e-11
+lat1_1,24,95.3005,55.0685,41.205,,,
+lat1_2,12,88.009,57.91,31.078,,,

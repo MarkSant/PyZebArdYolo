@@ -2,8 +2,10 @@
 
 Custom cross-shaped acrylic tank (behavioural arena).
 
-- `arena_dimensioned_drawing.png` — dimensioned technical drawing (mm).
-- `arena.stl` — 3D mesh of the tank *(to add: export from SketchUp)*.
-- `arena.skp` — editable SketchUp source *(to add)*.
+- `arena.skp` — editable SketchUp source (panels named by their dimensions in mm).
+- `arena.stl` — 3D mesh of the tank, exported from the SketchUp source.
+- `arena_dimensioned_drawing.png`, `arena_top_dimensioned.png` — dimensioned
+  drawings (mm); the top view is Figure 5 of the paper.
+- `arena_render_iso.png` — isometric render.
 
 License: CERN-OHL-S v2 (see top-level `NOTICE`).

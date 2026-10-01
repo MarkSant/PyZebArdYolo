@@ -1,0 +1,4 @@
+scope,cadence_ms,sampling_phase_median,optical_median,total_median,total_p95
+lat1_1,25.7897,12.8948,95.3005,107.3012,138.4428
+lat1_2,25.8811,12.9406,88.0090,100.3858,132.8241
+pooled,25.8354,12.9177,95.3005,104.0277,135.8684

@@ -1,0 +1,13 @@
+scope,leg,n,median,q25,q75
+pooled,frame_to_ack_ms,368,53.6395,45.4755,60.3340
+pooled,capture_to_decision_ms,368,34.0025,25.5605,41.0478
+pooled,decision_to_send_ms,368,0.2490,0.2097,0.3000
+pooled,serial_act_ms,368,19.5020,18.5093,20.4333
+lat1_1,frame_to_ack_ms,261,53.2750,43.8710,60.2710
+lat1_1,capture_to_decision_ms,261,33.6910,24.9450,40.9160
+lat1_1,decision_to_send_ms,261,0.2480,0.2080,0.3000
+lat1_1,serial_act_ms,261,19.4270,18.3420,20.4110
+lat1_2,frame_to_ack_ms,107,54.7960,47.9570,61.6795
+lat1_2,capture_to_decision_ms,107,34.6560,28.2080,41.4850
+lat1_2,decision_to_send_ms,107,0.2550,0.2170,0.2960
+lat1_2,serial_act_ms,107,19.7340,18.9145,20.5950

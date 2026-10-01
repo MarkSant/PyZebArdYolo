@@ -1,0 +1,4 @@
+metodo,n_videos,recall_mean,recall_min,recall_max
+Observer_2,3,100.0000,100.0000,100.0000
+PyZebArdYolo,14,97.8836,95.0200,99.0000
+ZebTrack,14,99.9293,99.6700,100.0000
