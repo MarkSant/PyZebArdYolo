@@ -10,13 +10,6 @@ position-contingent visual stimulation (RGB LEDs) to adult zebrafish
 GPU). It runs live camera feeds or pre-recorded videos and is intended for
 scientific research.
 
-> **Not the same software as "DRerio LogAI".** DRerio LogAI is a separate,
-> more advanced multi-aquarium tracking and statistical-reporting platform
-> by the same authors, registered as a computer program with INPI (Brazil)
-> under process **BR 51 2026 005215-7**, titular **Universidade Estadual
-> Paulista "Júlio de Mesquita Filho" (UNESP)**. PyZebArdYolo is not covered
-> by that registration and is released independently. See `NOTICE` §0.
-
 > **Package name note.** The internal Python package is named `zebtrack` for
 > legacy reasons. This is **unrelated to *ZebTrack***, the separate MATLAB
 > tracker (Luchiari lab, UFRN) that appears only as a comparator in the

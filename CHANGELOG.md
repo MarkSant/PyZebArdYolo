@@ -8,7 +8,8 @@ Neuroscience Methods). No change to the acquisition software or firmware.
 ### Added
 - `latency/`: logs of the two closed-loop latency sessions (lat1_1, lat1_2), the
   optical read-out script, the summary script that produces every latency value of
-  the paper, integrity checks and Figure 9 (vector PDF).
+  the paper, integrity checks and Figure 9 (vector PDF). The session videos are
+  archived separately on Zenodo (https://doi.org/10.5281/zenodo.23092482).
 - `validation/analysis/agreement_stats.py`: single implementation of ICC(A,1) with
   the exact McGraw & Wong 95% CI, Bland–Altman and proportional-bias statistics.
 - `validation/analysis/03_agreement_summary.py`: pooled Table 1, Table 2 diagnostics
@@ -27,3 +28,7 @@ Neuroscience Methods). No change to the acquisition software or firmware.
   manual row; N is now 4114 for PyZebArdYolo and 4200 for ZebTrack).
 - READMEs, `CITATION.cff` (new paper title, authors, journal, concept DOI) and
   version metadata updated.
+
+### Removed
+- Note about the unrelated DRerio LogAI software and its INPI registration
+  (README, NOTICE §0): it does not concern this repository.

@@ -40,7 +40,8 @@ preferred-citation:
       orcid: "https://orcid.org/0009-0000-0014-1485"
     - family-names: "Venâncio da Silva"
       given-names: "Gustavo"
-      affiliation: "São Paulo State University (UNESP), Botucatu, Brazil"   # confirm
+      affiliation: "São Paulo State University (UNESP), Botucatu, Brazil"
+      orcid: "https://orcid.org/0000-0002-2062-3315"
     - family-names: "Giaquinto"
       given-names: "Percília Cardoso"
       affiliation: "São Paulo State University (UNESP), Botucatu, Brazil"
@@ -49,3 +50,14 @@ preferred-citation:
   status: submitted
   year: 2026          # update on acceptance
   # doi: "10.1016/j.jneumeth.XXXX.XXXXXX"   # add the article DOI when available
+references:
+  - type: dataset
+    title: "PyZebArdYolo closed-loop latency sessions (videos)"
+    doi: "10.5281/zenodo.23092482"
+    authors:
+      - family-names: "Sant'Ana Camargos"
+        given-names: "Marco Antônio"
+      - family-names: "Venâncio da Silva"
+        given-names: "Gustavo"
+      - family-names: "Giaquinto"
+        given-names: "Percília Cardoso"

@@ -5,21 +5,6 @@ Copyright (c) 2025 Marco Antônio Sant'Ana Camargos and Percília Cardoso
 Giaquinto (UNESP, Botucatu/SP, Brazil).
 
 ------------------------------------------------------------------------
-0. Relationship to DRerio LogAI
-------------------------------------------------------------------------
-PyZebArdYolo is the real-time acquisition unit (webcam + YOLO11 detection +
-Arduino-driven position-contingent stimulation) developed by the same
-authors. It is NOT the same software as "DRerio LogAI: Software de
-Rastreamento Comportamental Automatizado de Peixes-Zebra com Visão
-Computacional, Suporte Multi-Aquário e Geração de Relatórios Estatísticos",
-a separate, more advanced multi-aquarium tracking/reporting platform whose
-titular (per Brazilian copyright registration, Lei 9.609/98) is the
-Universidade Estadual Paulista "Júlio de Mesquita Filho" (UNESP), INPI
-process BR 51 2026 005215-7, filed 07/07/2026. This repository is
-independent of that registration and no PI/AUIN authorization was required
-to make it public.
-
-------------------------------------------------------------------------
 1. License of the original code in this repository
 ------------------------------------------------------------------------
 The source code and Arduino firmware originally written by the authors are

@@ -22,7 +22,8 @@ acknowledgment timestamps from `time.perf_counter`, plus derived legs),
 frame) and `8_LatencyMeta` (measured rates, queue drops, ROI configuration).
 
 **Videos.** The session videos (`lat1_1.mp4`, 0.38 GB; `lat1_2.mp4`, 0.44 GB) exceed
-GitHub's file limit and are archived on Zenodo: [DOI to be added]. They are needed
+GitHub's file limit and are archived on Zenodo:
+[10.5281/zenodo.23092482](https://doi.org/10.5281/zenodo.23092482). They are needed
 only by step 1. Place them at `data/<session>/<session>.mp4`, or set
 `PYZEB_VIDEO_DIR` to a folder containing `lat1_1/lat1_1.mp4` and `lat1_2/lat1_2.mp4`.
 
