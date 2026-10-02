@@ -19,7 +19,9 @@ floor), each compared against **manual frame-by-frame annotation** (gold standar
 | Observer 2 | `data/Observer_2/` | second annotator (3 videos: CEST_Dia3, SEST_Dia4, CEST_Dia7) |
 
 Sessions: 14 videos, `CEST_Dia1–7` (stress-exposed animal) and `SEST_Dia1–7`
-(unstressed control animal), one session per animal and day.
+(unstressed control animal), one session per animal and day. The PyZebArdYolo tracks
+are the coordinate files written live during those experiments, with one position every
+10 frames (336 ms at 30 fps).
 
 ## Directory structure
 
@@ -36,6 +38,7 @@ validation/
     ├── 02_mixed_model.R           random-intercept models, per-video ICC (psych), method comparison
     ├── 03_agreement_summary.py    pooled Table 1, Table 2 diagnostics, % within 20/30 px, mm, recall
     ├── 04_figures.py              Figures 6, 7 and 8 (vector PDF + 600-dpi PNG)
+    ├── 05_sensitivity_checks.py   pairing-offset sensitivity, track cadence, latency estimate, annotation time
     ├── paired_coords/             frame-paired coordinates per method (pares_*.csv)
     ├── results/                   metrics_per_video, recall, recall_summary, summary_pooled,
     │                              bland_altman_diagnostics, localization_summary,
@@ -66,6 +69,7 @@ python3 01_pairing_metrics.py      # numpy, pandas, scipy, statsmodels, matplotl
 Rscript 02_mixed_model.R           # R packages: lme4, psych
 python3 03_agreement_summary.py
 python3 04_figures.py
+python3 05_sensitivity_checks.py
 ```
 
 ## Key results (pooled, 14 sessions)

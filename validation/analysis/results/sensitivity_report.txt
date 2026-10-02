@@ -1,0 +1,18 @@
+=== 1. Pairing-offset sensitivity ===
+PyZebArdYolo: mean offset 3.78 frames
+   all  n=4114 (100.0%) radial median 9.93 p95 33.7 ICC X 0.9979 Y 0.9873
+   <=4  n=3603 (87.6%) radial median 8.82 p95 26.3 ICC X 0.9984 Y 0.9918
+   >=5  n= 511 (12.4%) radial median 26.44 p95 54.5 ICC X 0.9943 Y 0.9687
+ZebTrack: mean offset 3.72 frames
+   all  n=4200 (100.0%) radial median 43.94 p95 119.8 ICC X 0.9573 Y 0.8548
+   <=4  n=2697 (64.2%) radial median 42.39 p95 108.6 ICC X 0.9654 Y 0.8691
+   >=5  n=1503 (35.8%) radial median 46.00 p95 145.5 ICC X 0.9353 Y 0.8215
+Observer_2: mean offset 1.33 frames
+   all  n= 903 (100.0%) radial median 5.78 p95 18.8 ICC X 0.9985 Y 0.9958
+   <=4  n= 903 (100.0%) radial median 5.78 p95 18.8 ICC X 0.9985 Y 0.9958
+
+=== 2. Decision cadence of the validation tracks: median 335.9 ms (range 335.5-336.0; n = 14 sessions)
+
+=== 3. Expected boundary-to-cue latency at a 335.9-ms cadence: median 260.0 ms, p95 413.5 ms (estimate)
+
+=== 4. Manual annotation time per 5-min video: first annotator 24.8 ± 2.6 min (n = 5); second annotator 35.3 ± 7.5 min (n = 3)

@@ -1,5 +1,14 @@
 # Changelog
 
+## 1.3.1 — 2026-10-02
+
+### Added
+- `validation/analysis/05_sensitivity_checks.py`: pairing-offset sensitivity analysis
+  (pairs at most 4 frames apart vs. 5-15 frames apart), decision cadence of the
+  live-recorded validation tracks (336 ms), expected boundary-to-cue latency for that
+  cadence (estimate, ~260 ms) and manual-annotation times. Outputs
+  `results/pairing_sensitivity.csv` and `results/sensitivity_report.txt`.
+
 ## 1.3.0 — 2026-10-01
 
 Release accompanying the submission of the PyZebArdYolo paper (Journal of
